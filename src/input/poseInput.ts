@@ -13,7 +13,7 @@
  */
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { mirrorPose, type Pose } from "../pose/landmarks";
-import { PlayerManager, type PlayerSignals } from "./playerManager";
+import { PlayerManager, type PlayerPosition, type PlayerSignals } from "./playerManager";
 import { type InputSource, type PlayerActions, emptyActions } from "./types";
 
 const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm";
@@ -132,13 +132,14 @@ export class PoseInput implements InputSource {
     return this.mgr.signals();
   }
 
-  /** Forget learned resting baselines so they re-seed from the current pose. */
-  recalibrate(): void {
-    this.mgr.resetAll();
+  /** Where each tracked player is, for drawing labels that follow them. */
+  positions(): PlayerPosition[] {
+    return this.mgr.positions();
   }
 
-  zoneOf(x: number): number {
-    return this.mgr.zoneOf(x);
+  /** Forget learned baselines + tracking so they re-seed from the current pose. */
+  recalibrate(): void {
+    this.mgr.resetAll();
   }
 
   stop(): void {

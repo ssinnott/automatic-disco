@@ -1,7 +1,7 @@
 # automatic-disco
 
 A **body-controlled minigame platform** for the browser. Your webcam tracks
-several people at once, splits the frame into one **zone per player**, and turns
+several people at once, **follows each player around the frame**, and turns
 each player's body into gestures (`jump`, `duck`, `lean left/right`, `grab`). Those
 gestures drive a set of **themed minigames**.
 
@@ -9,12 +9,13 @@ Each minigame is a **theme + 4 semi-procedurally generated phases**, ~1.5 minute
 total — so no two playthroughs are the same.
 
 ```
-webcam → MediaPipe pose → zone assignment → per-player gestures → minigame phases
+webcam → MediaPipe pose → player tracking → per-player gestures → minigame phases
 ```
 
 > Reimagined from an earlier Python/Pygame + YOLO rig. The gesture detection
-> (One-Euro smoothing, zone-based player assignment, jump/lean math) is ported
-> directly; pose now runs in-browser via MediaPipe.
+> (One-Euro smoothing, baseline-relative jump/lean math) is ported directly;
+> pose now runs in-browser via MediaPipe, and player assignment now tracks each
+> body across frames instead of binning by a fixed screen column.
 
 ## Tech stack
 
@@ -39,8 +40,12 @@ session needs a network connection.
 
 1. Pick a game (**Pirate's Plunder** or **Ninja Trials**), the player count
    (1–3), and an input mode.
-2. **Webcam pose** — grant camera access, stand back so your whole body is in
-   frame (one player per column for multiplayer), then start.
+2. **Webcam pose** — grant camera access, stand so your torso (shoulders→hips)
+   is in frame, then start. Jump/duck are read from the torso, so your head or
+   legs leaving frame when you're close is fine. For multiplayer, line up
+   left-to-right to begin (the leftmost player is P1); after that the game
+   **follows each of you around** — your colored `P#` tag sticks with you even
+   if you cross past each other.
 3. **Keyboard** — no camera needed; great for development. Distinct keysets per
    player so several people can share one keyboard:
 
@@ -70,9 +75,17 @@ and register a `MiniGame` (theme + phase pool) in `src/game/games/index.ts`.
 add it to a game's pool. A factory rolls its own parameters from the seeded `rng`,
 which is what makes runs semi-procedural.
 
-**How players stay separate:** state is keyed by **screen zone**, not tracker id —
-the person on the left is always P1, even if players cross over. Each zone keeps
-its own One-Euro filters and gesture state.
+**How players stay separate:** each player slot **tracks a body across frames**
+by nearest-previous-position. Slots are seeded left-to-right on first sight (the
+leftmost player is P1), then follow their body as it moves — so two players
+moving into each other's space, or crossing over, keep their identity instead of
+swapping. A slot is freed once its player has been off-camera for ~1.5s. Each
+slot keeps its own One-Euro filters and a learned resting baseline.
+
+**Robust to partial framing:** jump/duck come from hip displacement off a learned
+resting baseline, normalized by torso height — so only your shoulders and hips
+need to be visible. Baseline learning is gated on torso **visibility**, so a head
+or legs leaving the frame can't drag your "rest" pose around and break jumps.
 
 ## Scripts
 
