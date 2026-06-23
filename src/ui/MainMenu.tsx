@@ -19,15 +19,10 @@ export function MainMenu({ onStart, onOpenLab }: { onStart: () => void; onOpenLa
             <button
               key={g.id}
               className={`game-card${gameId === g.id ? " selected" : ""}`}
-              style={{ background: g.theme.palette.sky }}
               onClick={() => setGame(g.id)}
             >
-              <span className="game-card-title" style={{ color: g.theme.palette.text }}>
-                {g.title}
-              </span>
-              <span className="game-card-sub" style={{ color: g.theme.palette.text }}>
-                {g.theme.name}
-              </span>
+              <span className="game-card-title">{g.title}</span>
+              <span className="game-card-sub">{g.theme.name}</span>
             </button>
           ))}
         </div>

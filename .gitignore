@@ -4,6 +4,11 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Audio is kept out of git (large binaries). Fetch/place locally:
+# `npm run fetch-audio` — see public/audio/README.md
+/public/audio/*.mp3
+/public/audio/*.ogg
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

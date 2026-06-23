@@ -69,6 +69,8 @@ body,
   gap: 12px;
 }
 .game-card {
+  background: #1d3a5f; /* dark blue — default */
+  color: var(--text);
   border: 3px solid transparent;
   border-radius: 14px;
   padding: 22px 16px;
@@ -77,21 +79,25 @@ body,
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  transition: transform 0.08s ease;
+  transition: transform 0.08s ease, background 0.12s ease, color 0.12s ease;
 }
 .game-card:hover {
   transform: translateY(-2px);
 }
 .game-card.selected {
+  background: #7ec8e3; /* light blue — selected */
+  color: #0e1018;
   border-color: var(--accent);
 }
 .game-card-title {
   font-size: 20px;
   font-weight: 800;
+  color: inherit;
 }
 .game-card-sub {
   font-size: 13px;
   opacity: 0.8;
+  color: inherit;
 }
 
 .pill-row {
@@ -218,6 +224,22 @@ body,
   color: #fff;
   padding: 6px 14px;
   font-size: 14px;
+}
+.music-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.music-btn {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 14px;
+  line-height: 1;
+}
+.music-slider {
+  width: 72px;
+  accent-color: var(--accent);
 }
 .game-overlay {
   position: absolute;

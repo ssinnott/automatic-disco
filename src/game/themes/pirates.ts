@@ -4,8 +4,9 @@ import { drawHumanoid } from "./draw";
 export const piratesTheme: Theme = {
   id: "pirates",
   name: "Pirates",
-  obstacleWord: "barrel",
-  targetWord: "coin",
+  obstacleWord: "cannonball",
+  targetWord: "hat",
+  music: ["/audio/pirate-1.mp3", "/audio/pirate-2.mp3", "/audio/pirate-3.mp3"],
   palette: {
     sky: "#7ec8e3",
     skyAccent: "#bfe9f5",
@@ -29,25 +30,51 @@ export const piratesTheme: Theme = {
     ctx.fillRect(x, y + h * 0.8, w, h * 0.2);
   },
   drawTarget(ctx, cx, cy, r, angle) {
-    // a gold doubloon flipping edge-on (width squashes with the spin)
-    const w = r * (0.18 + 0.82 * Math.abs(Math.cos(angle)));
+    // captain's tricorne hat, gently rocking as it falls (the "good" pickup)
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.fillStyle = "#ffd23f";
+    ctx.rotate(Math.sin(angle) * 0.35);
+    // brim
+    ctx.fillStyle = "#2b2b2b";
     ctx.beginPath();
-    ctx.ellipse(0, 0, w, r, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, r * 0.28, r * 1.25, r * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#c79a1e";
-    ctx.lineWidth = Math.max(1, r * 0.14);
+    // tricorne crown (rounded triangle)
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.0, r * 0.3);
+    ctx.quadraticCurveTo(-r * 0.5, -r * 1.0, 0, -r * 0.85);
+    ctx.quadraticCurveTo(r * 0.5, -r * 1.0, r * 1.0, r * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    // gold trim along the brim
+    ctx.strokeStyle = "#ffd23f";
+    ctx.lineWidth = Math.max(1.5, r * 0.12);
+    ctx.beginPath();
+    ctx.ellipse(0, r * 0.28, r * 1.05, r * 0.34, 0, Math.PI * 0.05, Math.PI * 0.95);
     ctx.stroke();
-    if (w > r * 0.5) {
-      ctx.fillStyle = "#c79a1e";
-      ctx.font = `bold ${r * 1.3}px system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("★", 0, r * 0.05);
-    }
+    // skull emblem
+    ctx.fillStyle = "#f4f0e6";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.1, r * 0.26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2b2b2b";
+    ctx.beginPath();
+    ctx.arc(-r * 0.1, -r * 0.13, r * 0.06, 0, Math.PI * 2);
+    ctx.arc(r * 0.1, -r * 0.13, r * 0.06, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+  },
+  drawObstacle(ctx, cx, cy, r, _angle) {
+    // an iron cannonball (the "bad" object)
+    ctx.fillStyle = "#26262b";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    // sheen
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.32, cy - r * 0.32, r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
   },
   drawCharacter(ctx, cx, footY, size, state: CharacterState) {
     drawHumanoid(ctx, {

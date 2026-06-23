@@ -12,6 +12,7 @@ export const ninjasTheme: Theme = {
   name: "Turtle Ninjas",
   obstacleWord: "shuriken",
   targetWord: "pizza",
+  music: ["/audio/ninja-1.mp3"],
   palette: {
     sky: "#1b1538",
     skyAccent: "#2d2356",
@@ -39,6 +40,9 @@ export const ninjasTheme: Theme = {
   },
   drawTarget(ctx, cx, cy, r, angle) {
     drawPizzaSlice(ctx, cx, cy, r, angle);
+  },
+  drawObstacle(ctx, cx, cy, r, angle) {
+    drawShuriken(ctx, cx, cy, r, angle);
   },
   drawCharacter(ctx, cx, footY, size, state: CharacterState) {
     drawHumanoid(ctx, {
@@ -98,6 +102,34 @@ export const ninjasTheme: Theme = {
     });
   },
 };
+
+/** A spinning four-point shuriken (steel throwing star) — the "bad" object. */
+function drawShuriken(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle);
+  // four-pointed star: alternate outer/inner radius around 8 vertices
+  c.fillStyle = "#c2ccd6";
+  c.strokeStyle = "#6b7682";
+  c.lineWidth = Math.max(1, r * 0.05);
+  c.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const rad = i % 2 === 0 ? r : r * 0.4;
+    const a = (i / 8) * Math.PI * 2;
+    const x = Math.cos(a) * rad;
+    const y = Math.sin(a) * rad;
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  }
+  c.closePath();
+  c.fill();
+  c.stroke();
+  // center hole
+  c.fillStyle = "#15324a";
+  c.beginPath();
+  c.arc(0, 0, r * 0.16, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+}
 
 /** A spinning pizza slice: golden cheese wedge, browned crust, pepperoni. */
 function drawPizzaSlice(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {

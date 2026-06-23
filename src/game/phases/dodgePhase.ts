@@ -1,35 +1,38 @@
 /**
  * Runner-style dodge phase, co-op. The whole team stands together and one shared
- * stream of obstacles scrolls in from the right; each player must be performing
- * the matching gesture (jump / duck / lean) as an obstacle reaches the group.
- * Everyone "jumps the same object", but scores on their own.
+ * stream of obstacles scrolls in from the right; each player must JUMP (over a
+ * low obstacle) or DUCK (under a high one) as it reaches the group. Everyone
+ * "dodges the same object", but scores on their own.
  *
- * Semi-procedural: which gestures appear, spawn cadence, and scroll speed are
- * rolled from the seeded rng.
+ * Semi-procedural: jump/duck mix, spawn cadence, and scroll speed are rolled
+ * from the seeded rng.
  */
 import { type Action, type PlayerActions } from "../../input/types";
 import { type Phase, type PhaseContext, type Theme } from "../types";
 import { ACTION_LABEL, primaryPose, px, py, teamXs } from "./util";
 
-const DODGE_ACTIONS: Action[] = ["jump", "duck", "left", "right"];
+// Only jump/duck make sense for an oncoming-obstacle runner.
+const DODGE_ACTIONS: Action[] = ["jump", "duck"];
 const AVATAR_X = 0.3;
 const GROUND_Y = 0.84;
 const HIT_WINDOW = 0.16; // normalized x band around the team that counts
 const HIT_SCORE = 10;
 const FLASH_S = 0.5;
+const SPIN_RATE = 3.0; // radians / second (for spinning obstacles like shuriken)
 
 type Status = "live" | "hit" | "miss";
 
 interface Obstacle {
   x: number;
   action: Action;
+  spin: number;
   status: Status[]; // per player
 }
 
 export function makeDodgePhase(ctx: PhaseContext): Phase {
   const { rng, numPlayers } = ctx;
-  const allowed = rng.shuffle(DODGE_ACTIONS).slice(0, rng.int(2, 4));
-  const speed = rng.range(0.28, 0.4); // normalized widths / second (slower = easier)
+  const allowed = rng.shuffle([...DODGE_ACTIONS]);
+  const speed = rng.range(0.18, 0.27); // normalized widths / second (slower = easier)
   const spawnMin = rng.range(1.7, 2.1);
   const spawnMax = spawnMin + rng.range(0.6, 1.0);
 
@@ -43,6 +46,7 @@ export function makeDodgePhase(ctx: PhaseContext): Phase {
     obstacles.push({
       x: 1.12,
       action: rng.pick(allowed),
+      spin: rng.range(0, Math.PI * 2),
       status: Array.from({ length: numPlayers }, () => "live" as Status),
     });
     spawnTimer = rng.range(spawnMin, spawnMax);
@@ -87,17 +91,16 @@ export function makeDodgePhase(ctx: PhaseContext): Phase {
       c.lineTo(field.x + field.w, groundY);
       c.stroke();
 
-      // shared obstacles
-      const obW = field.w * 0.05;
+      // shared themed obstacles: low ones you JUMP, high ones you DUCK under
+      const r = field.h * 0.06;
       for (const ob of obstacles) {
-        c.fillStyle = theme.palette.obstacle;
-        const ox = px(field, ob.x) - obW / 2;
-        const oy = ob.action === "duck" ? groundY - field.h * 0.34 : groundY - field.h * 0.12;
-        c.fillRect(ox, oy, obW, field.h * 0.12);
+        const ox = px(field, ob.x);
+        const oy = ob.action === "duck" ? groundY - field.h * 0.28 : groundY - r * 1.05;
+        theme.drawObstacle(c, ox, oy, r, ob.spin + clock * SPIN_RATE);
         c.fillStyle = theme.palette.text;
         c.font = "bold 13px system-ui, sans-serif";
         c.textAlign = "center";
-        c.fillText(ACTION_LABEL[ob.action], px(field, ob.x), oy - 6);
+        c.fillText(ACTION_LABEL[ob.action], ox, oy - r - 6);
       }
 
       // the team, clustered and slightly overlapping

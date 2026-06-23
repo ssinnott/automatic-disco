@@ -1,0 +1,30 @@
+{
+  "_comment": "Background-music tracks. Files are gitignored (large binaries). Run `npm run fetch-audio` to see what's missing; tracks with a direct `url` download automatically, otherwise grab them from `source` and save as `file`. All sources are Pixabay (royalty-free, no attribution required).",
+  "dir": "public/audio",
+  "tracks": [
+    {
+      "file": "pirate-1.mp3",
+      "theme": "pirates",
+      "source": "https://pixabay.com/music/adventure-pirate-adventure-361663/",
+      "url": ""
+    },
+    {
+      "file": "pirate-2.mp3",
+      "theme": "pirates",
+      "source": "https://pixabay.com/music/folk-pirate-sea-shanty-accordion-fiddles-amp-stomping-drums-422957/",
+      "url": ""
+    },
+    {
+      "file": "pirate-3.mp3",
+      "theme": "pirates",
+      "source": "https://pixabay.com/music/main-title-pirate-ship-battle-433529/",
+      "url": ""
+    },
+    {
+      "file": "ninja-1.mp3",
+      "theme": "ninjas",
+      "source": "https://pixabay.com/music/percussion-ninja-oriental-background-music-476450/",
+      "url": ""
+    }
+  ]
+}

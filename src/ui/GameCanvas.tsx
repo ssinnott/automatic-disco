@@ -5,6 +5,8 @@ import { GameRunner } from "../game/gameRunner";
 import { type MiniGame } from "../game/types";
 import { CameraPreview } from "./CameraPreview";
 import { GestureDiagnostics } from "./GestureDiagnostics";
+import { MusicControl } from "./MusicControl";
+import { audio } from "../audio/audioManager";
 
 export function GameCanvas({
   game,
@@ -35,6 +37,9 @@ export function GameCanvas({
     runnerRef.current = runner;
     setDone(false);
 
+    // Themed background music; loops for the run, fades out on exit.
+    audio.play(game.theme.music);
+
     let raf = 0;
     let last = performance.now();
     let reportedDone = false;
@@ -63,6 +68,7 @@ export function GameCanvas({
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      audio.stop();
     };
   }, [game, input, numPlayers, round]);
 
@@ -72,6 +78,7 @@ export function GameCanvas({
       <div className="game-topbar">
         <span className="game-title">{game.title}</span>
         <span className="game-mode">{input.kind === "pose" ? "📷 pose" : "⌨️ keyboard"}</span>
+        <MusicControl />
         <button className="btn-quit" onClick={onExit}>
           Quit
         </button>

@@ -88,22 +88,26 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
 
   o.bodyDecor?.(ctx, o.cx, bodyTop, bodyW, hipY - bodyTop);
 
-  // arms
+  // arms — set the stroke explicitly here, since bodyDecor (e.g. a turtle
+  // shell) may have changed strokeStyle/lineWidth before this point.
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = h * 0.085;
   const shoulderY = bodyTop + h * 0.06;
+  const armDx = pose === "grab" ? bodyW * 0.95 : bodyW * 0.88;
+  const armDy = pose === "grab" ? -h * 0.24 : h * 0.2;
   ctx.beginPath();
-  ctx.moveTo(o.cx - bodyW * 0.5, shoulderY);
-  if (pose === "grab") {
-    ctx.lineTo(o.cx - bodyW * 0.9, shoulderY - h * 0.22); // left arm raised
-  } else {
-    ctx.lineTo(o.cx - bodyW * 0.8, shoulderY + h * 0.18);
-  }
-  ctx.moveTo(o.cx + bodyW * 0.5, shoulderY);
-  if (pose === "grab") {
-    ctx.lineTo(o.cx + bodyW * 0.9, shoulderY - h * 0.22); // right arm raised
-  } else {
-    ctx.lineTo(o.cx + bodyW * 0.8, shoulderY + h * 0.18);
-  }
+  ctx.moveTo(o.cx - bodyW * 0.45, shoulderY);
+  ctx.lineTo(o.cx - armDx, shoulderY + armDy);
+  ctx.moveTo(o.cx + bodyW * 0.45, shoulderY);
+  ctx.lineTo(o.cx + armDx, shoulderY + armDy);
   ctx.stroke();
+  // hands
+  ctx.fillStyle = bodyColor;
+  for (const sx of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(o.cx + sx * armDx, shoulderY + armDy, h * 0.052, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // head
   ctx.fillStyle = o.skinColor;

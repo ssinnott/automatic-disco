@@ -16,14 +16,14 @@ const GROUND_Y = 0.84;
 const CATCH_SCORE = 10;
 const FLASH_S = 0.5;
 const SPIN_RATE = 2.6; // radians / second
-
-type Status = "live" | "caught" | "missed";
+const POP_S = 0.28; // how long the "collected" pop lingers before vanishing
 
 interface Target {
   lane: number;
   y: number;
   spin: number; // initial spin angle
-  status: Status[];
+  caught: boolean;
+  pop: number; // seconds of collect-pop animation remaining (>0 once caught)
 }
 
 function avatarLane(actions: Set<Action>): number {
@@ -34,7 +34,7 @@ function avatarLane(actions: Set<Action>): number {
 
 export function makeGrabPhase(ctx: PhaseContext): Phase {
   const { rng, numPlayers } = ctx;
-  const speed = rng.range(0.22, 0.32); // normalized heights / second (slower = easier)
+  const speed = rng.range(0.15, 0.22); // normalized heights / second (slower = easier)
   const spawnMin = rng.range(1.2, 1.6);
   const spawnMax = spawnMin + rng.range(0.5, 0.9);
 
@@ -49,7 +49,8 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
       lane: rng.int(0, 2),
       y: -0.05,
       spin: rng.range(0, Math.PI * 2),
-      status: Array.from({ length: numPlayers }, () => "live" as Status),
+      caught: false,
+      pop: 0,
     });
     spawnTimer = rng.range(spawnMin, spawnMax);
   };
@@ -65,21 +66,35 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
       if (spawnTimer <= 0) spawn();
 
       for (const tg of targets) {
+        // A caught target freezes in place and plays its vanish-pop.
+        if (tg.caught) {
+          tg.pop -= dt;
+          continue;
+        }
         tg.y += speed * dt;
+        const inBand = tg.y >= CATCH_TOP && tg.y <= CATCH_BOTTOM;
+        if (!inBand) continue;
+        // Anyone standing in this lane and grabbing collects it this frame.
+        let collected = false;
         for (let p = 0; p < numPlayers; p++) {
-          if (tg.status[p] !== "live") continue;
-          const inBand = tg.y >= CATCH_TOP && tg.y <= CATCH_BOTTOM;
-          if (inBand && avatarLane(actions[p] ?? new Set()) === tg.lane && actions[p]?.has("grab")) {
-            tg.status[p] = "caught";
+          if (avatarLane(actions[p] ?? new Set()) === tg.lane && actions[p]?.has("grab")) {
             scores[p] += CATCH_SCORE;
             flash[p] = clock + FLASH_S;
-          } else if (tg.y > CATCH_BOTTOM) {
-            tg.status[p] = "missed";
+            collected = true;
           }
+        }
+        if (collected) {
+          tg.caught = true;
+          tg.pop = POP_S;
         }
       }
       for (let i = targets.length - 1; i >= 0; i--) {
-        if (targets[i].y > 1.1) targets.splice(i, 1);
+        const tg = targets[i];
+        // Caught → gone after its pop; uncaught → gone once it passes the catch
+        // line (so it never falls through the floor and lingers).
+        if ((tg.caught && tg.pop <= 0) || (!tg.caught && tg.y > CATCH_BOTTOM)) {
+          targets.splice(i, 1);
+        }
       }
     },
     render(c, field, theme: Theme) {
@@ -100,11 +115,18 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
       c.lineTo(field.x + field.w, py(field, GROUND_Y));
       c.stroke();
 
-      // shared targets (themed shape, spinning as they fall)
+      // shared targets (themed shape, spinning as they fall). A collected one
+      // briefly pops then disappears instead of continuing to fall.
       const r = field.w * 0.03;
       for (const tg of targets) {
         if (tg.y < -0.1) continue;
-        theme.drawTarget(c, px(field, LANE_X[tg.lane]), py(field, tg.y), r, tg.spin + clock * SPIN_RATE);
+        const tx = px(field, LANE_X[tg.lane]);
+        const ty = py(field, tg.y);
+        if (tg.caught) {
+          drawPop(c, tx, ty, r, 1 - tg.pop / POP_S, theme.palette.target);
+        } else {
+          theme.drawTarget(c, tx, ty, r, tg.spin + clock * SPIN_RATE);
+        }
       }
 
       // avatars grouped by chosen lane, with a colored pointer each
@@ -125,6 +147,18 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
       }
     },
   };
+}
+
+/** A quick expanding ring where a collected target vanished (t: 0→1). */
+function drawPop(c: CanvasRenderingContext2D, x: number, y: number, r: number, t: number, color: string) {
+  c.save();
+  c.globalAlpha = Math.max(0, 1 - t);
+  c.strokeStyle = color;
+  c.lineWidth = Math.max(2, r * 0.4 * (1 - t));
+  c.beginPath();
+  c.arc(x, y, r * (1 + t * 1.6), 0, Math.PI * 2);
+  c.stroke();
+  c.restore();
 }
 
 /** A colored down-pointing marker (with the player number) over an avatar. */

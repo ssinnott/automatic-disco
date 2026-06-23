@@ -37,10 +37,14 @@ export interface Theme {
   drawCharacter(ctx: CanvasRenderingContext2D, cx: number, footY: number, size: number, state: CharacterState): void;
   /** Draw a collectible target (grab phase) at (cx, cy), spun by `angle` rad. */
   drawTarget(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number): void;
-  /** Word for obstacles ("barrel", "shuriken") used in instructions. */
+  /** Draw a dodge obstacle (the "bad" object) at (cx, cy), spun by `angle` rad. */
+  drawObstacle(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number): void;
+  /** Word for obstacles ("cannonball", "shuriken") used in instructions. */
   obstacleWord: string;
   /** Word for collectible targets ("coin", "scroll"). */
   targetWord: string;
+  /** Background-music file paths (served from public/); one is picked per run. */
+  music: string[];
 }
 
 /** Logical, per-player play area handed to a phase each frame. */
