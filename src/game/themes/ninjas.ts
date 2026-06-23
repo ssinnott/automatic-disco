@@ -9,7 +9,7 @@ const PLASTRON = "#d8b870";
 
 export const ninjasTheme: Theme = {
   id: "ninjas",
-  name: "Ninja Turtles",
+  name: "Turtle Ninjas",
   obstacleWord: "shuriken",
   targetWord: "pizza",
   palette: {
@@ -19,7 +19,7 @@ export const ninjasTheme: Theme = {
     obstacle: "#cfd8e3",
     target: "#f4e1a0",
     text: "#e9e4ff",
-    // Classic mask colors → also the per-player avatar/HUD color.
+    // Each turtle's headband/mask color → also the per-player avatar/HUD color.
     players: ["#2f6fd0", "#d83a3a", "#e0871e"],
   },
   drawBackground(ctx, x, y, w, h) {
