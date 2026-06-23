@@ -25,6 +25,15 @@ export function roundRect(
 /** Draws headgear given the head center and radius (in the current transform). */
 export type Accessory = (ctx: CanvasRenderingContext2D, hx: number, hy: number, hr: number) => void;
 
+/** Draws torso decoration (e.g. a turtle shell) given the body box. */
+export type BodyDecor = (
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  bodyTop: number,
+  bodyW: number,
+  bodyH: number,
+) => void;
+
 export interface HumanoidOpts {
   cx: number;
   footY: number;
@@ -35,6 +44,8 @@ export interface HumanoidOpts {
   /** "idle" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
   pose: string;
   accessory?: Accessory;
+  /** Optional torso decoration, drawn over the body in its transform. */
+  bodyDecor?: BodyDecor;
 }
 
 export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
@@ -74,6 +85,8 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   ctx.fillStyle = bodyColor;
   roundRect(ctx, o.cx - bodyW / 2, bodyTop, bodyW, hipY - bodyTop, bodyW * 0.4);
   ctx.fill();
+
+  o.bodyDecor?.(ctx, o.cx, bodyTop, bodyW, hipY - bodyTop);
 
   // arms
   const shoulderY = bodyTop + h * 0.06;

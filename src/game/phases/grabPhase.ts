@@ -15,12 +15,14 @@ const CATCH_BOTTOM = 0.9;
 const GROUND_Y = 0.84;
 const CATCH_SCORE = 10;
 const FLASH_S = 0.5;
+const SPIN_RATE = 2.6; // radians / second
 
 type Status = "live" | "caught" | "missed";
 
 interface Target {
   lane: number;
   y: number;
+  spin: number; // initial spin angle
   status: Status[];
 }
 
@@ -46,6 +48,7 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
     targets.push({
       lane: rng.int(0, 2),
       y: -0.05,
+      spin: rng.range(0, Math.PI * 2),
       status: Array.from({ length: numPlayers }, () => "live" as Status),
     });
     spawnTimer = rng.range(spawnMin, spawnMax);
@@ -97,13 +100,11 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
       c.lineTo(field.x + field.w, py(field, GROUND_Y));
       c.stroke();
 
-      // shared targets
-      const r = field.w * 0.025;
+      // shared targets (themed shape, spinning as they fall)
+      const r = field.w * 0.03;
       for (const tg of targets) {
-        c.fillStyle = theme.palette.target;
-        c.beginPath();
-        c.arc(px(field, LANE_X[tg.lane]), py(field, tg.y), r, 0, Math.PI * 2);
-        c.fill();
+        if (tg.y < -0.1) continue;
+        theme.drawTarget(c, px(field, LANE_X[tg.lane]), py(field, tg.y), r, tg.spin + clock * SPIN_RATE);
       }
 
       // avatars grouped by chosen lane, with a colored pointer each

@@ -28,6 +28,27 @@ export const piratesTheme: Theme = {
     ctx.fillStyle = "#e3c79a";
     ctx.fillRect(x, y + h * 0.8, w, h * 0.2);
   },
+  drawTarget(ctx, cx, cy, r, angle) {
+    // a gold doubloon flipping edge-on (width squashes with the spin)
+    const w = r * (0.18 + 0.82 * Math.abs(Math.cos(angle)));
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = "#ffd23f";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w, r, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#c79a1e";
+    ctx.lineWidth = Math.max(1, r * 0.14);
+    ctx.stroke();
+    if (w > r * 0.5) {
+      ctx.fillStyle = "#c79a1e";
+      ctx.font = `bold ${r * 1.3}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("★", 0, r * 0.05);
+    }
+    ctx.restore();
+  },
   drawCharacter(ctx, cx, footY, size, state: CharacterState) {
     drawHumanoid(ctx, {
       cx,

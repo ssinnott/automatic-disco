@@ -35,6 +35,8 @@ export interface Theme {
   drawBackground(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, tMs: number): void;
   /** Draw a simple geometric character centered at (cx, footY). */
   drawCharacter(ctx: CanvasRenderingContext2D, cx: number, footY: number, size: number, state: CharacterState): void;
+  /** Draw a collectible target (grab phase) at (cx, cy), spun by `angle` rad. */
+  drawTarget(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number): void;
   /** Word for obstacles ("barrel", "shuriken") used in instructions. */
   obstacleWord: string;
   /** Word for collectible targets ("coin", "scroll"). */
