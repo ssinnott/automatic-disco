@@ -91,11 +91,12 @@ export function makeDodgePhase(ctx: PhaseContext): Phase {
       c.lineTo(field.x + field.w, groundY);
       c.stroke();
 
-      // shared themed obstacles: low ones you JUMP, high ones you DUCK under
+      // shared themed obstacles: low ones you JUMP, high ones you DUCK under.
+      // Duck obstacle sits high enough for the (now 2x) ducking character to fit.
       const r = field.h * 0.06;
       for (const ob of obstacles) {
         const ox = px(field, ob.x);
-        const oy = ob.action === "duck" ? groundY - field.h * 0.28 : groundY - r * 1.05;
+        const oy = ob.action === "duck" ? groundY - field.h * 0.42 : groundY - r * 1.05;
         theme.drawObstacle(c, ox, oy, r, ob.spin + clock * SPIN_RATE);
         c.fillStyle = theme.palette.text;
         c.font = "bold 13px system-ui, sans-serif";
@@ -103,8 +104,8 @@ export function makeDodgePhase(ctx: PhaseContext): Phase {
         c.fillText(ACTION_LABEL[ob.action], ox, oy - r - 6);
       }
 
-      // the team, clustered and slightly overlapping
-      const size = field.h * 0.2;
+      // the team, clustered and slightly overlapping (2x larger here)
+      const size = field.h * 0.4;
       const xs = teamXs(px(field, AVATAR_X), size, numPlayers);
       for (let p = 0; p < numPlayers; p++) {
         theme.drawCharacter(c, xs[p], groundY, size, {

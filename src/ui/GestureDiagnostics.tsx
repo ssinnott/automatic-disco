@@ -10,8 +10,10 @@ function Meter({
   value,
   threshold,
   on,
-  /** Full-scale value for the bar (so the threshold sits sensibly inside it). */
+  /** Top of the bar's range. */
   scale,
+  /** Bottom of the bar's range (default 0; grab rests near -1). */
+  floor = 0,
   /** Signed bars (lean) center at zero. */
   signed = false,
 }: {
@@ -20,10 +22,12 @@ function Meter({
   threshold: number;
   on: boolean;
   scale: number;
+  floor?: number;
   signed?: boolean;
 }) {
-  const frac = (v: number) => Math.max(0, Math.min(1, (signed ? Math.abs(v) : v) / scale));
-  const tFrac = Math.max(0, Math.min(1, threshold / scale));
+  const span = scale - floor || 1;
+  const frac = (v: number) => Math.max(0, Math.min(1, ((signed ? Math.abs(v) : v) - floor) / span));
+  const tFrac = Math.max(0, Math.min(1, (threshold - floor) / span));
   return (
     <div className="diag-row">
       <span className={`diag-label${on ? " on" : ""}`}>{label}</span>
@@ -108,7 +112,14 @@ export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numP
               scale={0.6}
               signed
             />
-            <Meter label="GRAB" value={s.grab} threshold={gestureConfig.grabRaise} on={a.has("grab")} scale={0.4} />
+            <Meter
+              label="GRAB"
+              value={s.grab}
+              threshold={gestureConfig.grabRaise}
+              on={a.has("grab")}
+              floor={-1}
+              scale={0.5}
+            />
           </div>
         );
       })}

@@ -55,7 +55,7 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   const running = pose === "run";
   // A running figure bobs up and down over the stride cycle (twice per cycle).
   const runBob = running ? Math.abs(Math.sin((o.phase ?? 0) * Math.PI * 2)) * o.size * 0.06 : 0;
-  const lift = (pose === "jump" ? o.size * 0.18 : 0) + runBob;
+  const lift = (pose === "jump" ? o.size * 0.55 : 0) + runBob;
   const h = pose === "duck" ? o.size * 0.62 : o.size;
   const footY = o.footY - lift;
   const top = footY - h;

@@ -20,7 +20,12 @@ export interface GestureConfig {
   duckDrop: number;
   /** |shoulder offset| / shoulder width past this → lean. */
   leanRatio: number;
-  /** A wrist raised above the shoulders by this fraction of torso → grab. */
+  /**
+   * Grab fires when the higher wrist rises past this (in torso heights relative
+   * to the shoulder line). Arms-down rests near -1.0, so a value around -0.45
+   * means "hands up to about chest height" — a natural reach, not an overhead
+   * raise.
+   */
   grabRaise: number;
 }
 
@@ -28,7 +33,7 @@ export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
   jumpRise: 0.15,
   duckDrop: 0.15,
   leanRatio: 0.18,
-  grabRaise: 0.05,
+  grabRaise: -0.45,
 };
 
 /** Live, mutable config shared by gameplay and the Gesture Lab. */
