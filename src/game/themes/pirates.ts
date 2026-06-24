@@ -6,6 +6,11 @@ export const piratesTheme: Theme = {
   name: "Pirates",
   obstacleWord: "cannonball",
   targetWord: "hat",
+  // Runner pickups: the captain's hat plus a gold doubloon.
+  collectibles: [
+    { name: "Hat", draw: (c, cx, cy, r, a) => piratesTheme.drawTarget(c, cx, cy, r, a) },
+    { name: "Doubloon", draw: drawDoubloon },
+  ],
   music: ["/audio/pirate-1.mp3", "/audio/pirate-2.mp3", "/audio/pirate-3.mp3"],
   palette: {
     sky: "#7ec8e3",
@@ -84,6 +89,7 @@ export const piratesTheme: Theme = {
       bodyColor: state.color,
       skinColor: "#f1c9a5",
       pose: state.pose,
+      phase: state.phase,
       accessory: (c, hx, hy, hr) => {
         // tricorne hat: dark triangle band above the head
         c.fillStyle = "#2b2b2b";
@@ -100,3 +106,31 @@ export const piratesTheme: Theme = {
     });
   },
 };
+
+/** A spinning gold doubloon (foreshortened as it tumbles) with a star stamp. */
+function drawDoubloon(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  const squash = Math.abs(Math.cos(angle)); // edge-on at the extremes → a flip
+  c.scale(Math.max(0.18, squash), 1);
+  c.fillStyle = "#f0c33c";
+  c.strokeStyle = "#b8902a";
+  c.lineWidth = Math.max(1.5, r * 0.12);
+  c.beginPath();
+  c.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+  c.fill();
+  c.stroke();
+  // star stamp
+  c.fillStyle = "#d9a92e";
+  c.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const rad = i % 2 === 0 ? r * 0.5 : r * 0.22;
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(a) * rad;
+    const y = Math.sin(a) * rad;
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  }
+  c.closePath();
+  c.fill();
+  c.restore();
+}

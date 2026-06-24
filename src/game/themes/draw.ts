@@ -41,8 +41,10 @@ export interface HumanoidOpts {
   size: number;
   bodyColor: string;
   skinColor: string;
-  /** "idle" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
+  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
   pose: string;
+  /** Cyclic 0..1 stride phase for the "run" pose's leg/arm swing. */
+  phase?: number;
   accessory?: Accessory;
   /** Optional torso decoration, drawn over the body in its transform. */
   bodyDecor?: BodyDecor;
@@ -50,10 +52,15 @@ export interface HumanoidOpts {
 
 export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   const { pose } = o;
-  const lift = pose === "jump" ? o.size * 0.18 : 0;
+  const running = pose === "run";
+  // A running figure bobs up and down over the stride cycle (twice per cycle).
+  const runBob = running ? Math.abs(Math.sin((o.phase ?? 0) * Math.PI * 2)) * o.size * 0.06 : 0;
+  const lift = (pose === "jump" ? o.size * 0.18 : 0) + runBob;
   const h = pose === "duck" ? o.size * 0.62 : o.size;
   const footY = o.footY - lift;
   const top = footY - h;
+  // Forward/back stride offset for legs (and opposite for arms).
+  const stride = running ? Math.sin((o.phase ?? 0) * Math.PI * 2) * h * 0.16 : 0;
 
   ctx.save();
   if (pose === "left" || pose === "right") {
@@ -74,11 +81,14 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   ctx.lineWidth = h * 0.07;
   ctx.lineCap = "round";
   const hipY = footY - h * 0.32;
+  // Swing the feet fore/aft for a running stride; lift whichever foot is forward.
+  const lFoot = -stride; // left and right legs move in opposition
+  const rFoot = stride;
   ctx.beginPath();
   ctx.moveTo(o.cx - bodyW * 0.3, hipY);
-  ctx.lineTo(o.cx - bodyW * 0.5, footY);
+  ctx.lineTo(o.cx - bodyW * 0.5 + lFoot, footY - Math.max(0, lFoot) * 0.5);
   ctx.moveTo(o.cx + bodyW * 0.3, hipY);
-  ctx.lineTo(o.cx + bodyW * 0.5, footY);
+  ctx.lineTo(o.cx + bodyW * 0.5 + rFoot, footY - Math.max(0, rFoot) * 0.5);
   ctx.stroke();
 
   // body
@@ -95,17 +105,22 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   const shoulderY = bodyTop + h * 0.06;
   const armDx = pose === "grab" ? bodyW * 0.95 : bodyW * 0.88;
   const armDy = pose === "grab" ? -h * 0.24 : h * 0.2;
+  // Pump the arms in opposition to the legs while running.
+  const aL = stride * 1.4; // left arm leads when the right leg is forward
+  const aR = -stride * 1.4;
+  const lHand = { x: o.cx - armDx + aL, y: shoulderY + armDy - Math.max(0, aL) * 0.6 };
+  const rHand = { x: o.cx + armDx + aR, y: shoulderY + armDy - Math.max(0, -aR) * 0.6 };
   ctx.beginPath();
   ctx.moveTo(o.cx - bodyW * 0.45, shoulderY);
-  ctx.lineTo(o.cx - armDx, shoulderY + armDy);
+  ctx.lineTo(lHand.x, lHand.y);
   ctx.moveTo(o.cx + bodyW * 0.45, shoulderY);
-  ctx.lineTo(o.cx + armDx, shoulderY + armDy);
+  ctx.lineTo(rHand.x, rHand.y);
   ctx.stroke();
   // hands
   ctx.fillStyle = bodyColor;
-  for (const sx of [-1, 1]) {
+  for (const hand of [lHand, rHand]) {
     ctx.beginPath();
-    ctx.arc(o.cx + sx * armDx, shoulderY + armDy, h * 0.052, 0, Math.PI * 2);
+    ctx.arc(hand.x, hand.y, h * 0.052, 0, Math.PI * 2);
     ctx.fill();
   }
 
