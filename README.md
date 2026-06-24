@@ -62,7 +62,7 @@ src/
   pose/      One-Euro filter, MediaPipe-33 landmark helpers
   input/     gesture detection, zone-based PlayerManager, pose & keyboard backends
   game/      Phase/Theme/MiniGame model, seeded RNG, GameRunner (4-phase sequencer)
-    phases/  dodge · grab · gesture-match archetypes (semi-procedural)
+    phases/  dodge · grab · gesture-match · runner archetypes (semi-procedural)
     themes/  pirates · ninjas (palette + background + geometric characters)
     games/   the two minigames built from a theme + phase pool
   ui/        MainMenu, GameCanvas, CameraPreview
@@ -74,6 +74,13 @@ and register a `MiniGame` (theme + phase pool) in `src/game/games/index.ts`.
 **Adding a phase archetype:** export a `PhaseFactory` from `src/game/phases/` and
 add it to a game's pool. A factory rolls its own parameters from the seeded `rng`,
 which is what makes runs semi-procedural.
+
+**The runner phase** (`runnerPhase.ts`) is a side-scrolling infinite runner: the
+team runs in place (animated stride) while the world scrolls past — JUMP to clear
+ground hazards and snag floating treats, DUCK under overhead ones. Treats are the
+theme's positive pickups (`Theme.collectibles`); for the turtles that's a pizza
+slice **plus each turtle's signature weapon** — katana, bō, sai, and nunchaku.
+Themes that don't define `collectibles` fall back to their single `drawTarget`.
 
 **How players stay separate:** each player slot **tracks a body across frames**
 by nearest-previous-position. Slots are seeded left-to-right on first sight (the

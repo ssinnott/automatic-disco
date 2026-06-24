@@ -22,9 +22,21 @@ export interface Palette {
 }
 
 export interface CharacterState {
-  /** "idle" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
+  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
   pose: string;
   color: string;
+  /** Cyclic 0..1 stride phase, used to animate the legs/arms of the "run" pose. */
+  phase?: number;
+}
+
+/** Draw a positive pickup (spun by `angle`) — same shape as `drawTarget`. */
+export type CollectibleDraw = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) => void;
+
+/** A positive pickup for the runner phase (e.g. a pizza or a turtle's weapon). */
+export interface Collectible {
+  /** Name shown when collected, e.g. "Pizza", "Katana". */
+  name: string;
+  draw: CollectibleDraw;
 }
 
 export interface Theme {
@@ -43,6 +55,13 @@ export interface Theme {
   obstacleWord: string;
   /** Word for collectible targets ("coin", "scroll"). */
   targetWord: string;
+  /**
+   * Positive pickups for the side-scrolling runner phase, each drawn like a
+   * spinning target. Lets a theme offer several treats (the ninjas rain down
+   * pizza *and* each turtle's weapon). Falls back to `drawTarget`/`targetWord`
+   * when omitted.
+   */
+  collectibles?: Collectible[];
   /** Background-music file paths (served from public/); one is picked per run. */
   music: string[];
 }

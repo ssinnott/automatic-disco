@@ -12,6 +12,15 @@ export const ninjasTheme: Theme = {
   name: "Turtle Ninjas",
   obstacleWord: "shuriken",
   targetWord: "pizza",
+  // Positive pickups for the runner: a pizza slice plus each turtle's signature
+  // weapon (Leo's katanas, Donnie's bō, Raph's sai, Mikey's nunchaku).
+  collectibles: [
+    { name: "Pizza", draw: drawPizzaSlice },
+    { name: "Katana", draw: drawKatana },
+    { name: "Bō staff", draw: drawBoStaff },
+    { name: "Sai", draw: drawSai },
+    { name: "Nunchaku", draw: drawNunchaku },
+  ],
   music: ["/audio/ninja-1.mp3"],
   palette: {
     sky: "#1b1538",
@@ -52,6 +61,7 @@ export const ninjasTheme: Theme = {
       bodyColor: TURTLE_BODY,
       skinColor: TURTLE_SKIN,
       pose: state.pose,
+      phase: state.phase,
       bodyDecor: (c, bx, by, bw, bh) => {
         // shell rim (a touch wider than the torso, peeking at the sides)
         const cyShell = by + bh * 0.52;
@@ -167,6 +177,126 @@ function drawPizzaSlice(c: CanvasRenderingContext2D, cx: number, cy: number, r: 
     c.beginPath();
     c.arc(px2, py2, R * 0.12, 0, Math.PI * 2);
     c.fill();
+  }
+  c.restore();
+}
+
+// ── Turtle weapons (the runner's bonus pickups) ──────────────────────────────
+// Each is drawn within roughly a circle of radius `r` about (cx, cy), spun by
+// `angle` so it tumbles in the air like the pizza does.
+
+/** Leonardo's katana: a steel blade with a guard and wrapped grip. */
+function drawKatana(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle - Math.PI / 4); // rest diagonally
+  // blade
+  c.fillStyle = "#dfe6ee";
+  c.strokeStyle = "#9aa6b2";
+  c.lineWidth = Math.max(1, r * 0.04);
+  c.beginPath();
+  c.moveTo(-r * 0.1, r * 0.95);
+  c.lineTo(-r * 0.1, -r * 0.6);
+  c.lineTo(0, -r * 0.95); // pointed tip
+  c.lineTo(r * 0.1, -r * 0.6);
+  c.lineTo(r * 0.1, r * 0.95);
+  c.closePath();
+  c.fill();
+  c.stroke();
+  // guard (tsuba)
+  c.fillStyle = "#3a3a3a";
+  c.fillRect(-r * 0.32, r * 0.92, r * 0.64, r * 0.12);
+  // wrapped grip
+  c.fillStyle = "#1f1f1f";
+  c.fillRect(-r * 0.09, r * 1.04, r * 0.18, r * 0.5);
+  c.restore();
+}
+
+/** Donatello's bō: a long brown staff with banded ends. */
+function drawBoStaff(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle + Math.PI / 5);
+  c.fillStyle = "#9a6b3f";
+  c.strokeStyle = "#6e4a28";
+  c.lineWidth = Math.max(1, r * 0.04);
+  c.beginPath();
+  // rounded-end staff
+  if (c.roundRect) c.roundRect(-r * 0.12, -r * 1.05, r * 0.24, r * 2.1, r * 0.12);
+  else c.rect(-r * 0.12, -r * 1.05, r * 0.24, r * 2.1);
+  c.fill();
+  c.stroke();
+  // darker grip bands near each end
+  c.fillStyle = "#5e3f24";
+  for (const yy of [-r * 0.74, r * 0.62]) c.fillRect(-r * 0.12, yy, r * 0.24, r * 0.12);
+  c.restore();
+}
+
+/** Raphael's sai: a central prong flanked by two curved guards. */
+function drawSai(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle);
+  c.strokeStyle = "#c8d0d8";
+  c.fillStyle = "#c8d0d8";
+  c.lineWidth = Math.max(1.5, r * 0.12);
+  c.lineCap = "round";
+  // central prong
+  c.beginPath();
+  c.moveTo(0, r * 0.5);
+  c.lineTo(0, -r * 0.95);
+  c.stroke();
+  // two side prongs curving up from the cross-guard
+  c.lineWidth = Math.max(1, r * 0.09);
+  for (const s of [-1, 1]) {
+    c.beginPath();
+    c.moveTo(0, r * 0.32);
+    c.quadraticCurveTo(s * r * 0.5, r * 0.18, s * r * 0.42, -r * 0.4);
+    c.stroke();
+  }
+  // handle + pommel
+  c.lineWidth = Math.max(1.5, r * 0.14);
+  c.strokeStyle = "#3a3a3a";
+  c.beginPath();
+  c.moveTo(0, r * 0.5);
+  c.lineTo(0, r * 0.95);
+  c.stroke();
+  c.fillStyle = "#3a3a3a";
+  c.beginPath();
+  c.arc(0, r * 0.98, r * 0.12, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+}
+
+/** Michelangelo's nunchaku: two short batons joined by a chain. */
+function drawNunchaku(c: CanvasRenderingContext2D, cx: number, cy: number, r: number, angle: number) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle);
+  // chain
+  c.strokeStyle = "#8a8f96";
+  c.lineWidth = Math.max(1, r * 0.05);
+  c.beginPath();
+  c.moveTo(-r * 0.45, -r * 0.5);
+  c.lineTo(r * 0.45, r * 0.5);
+  c.stroke();
+  // two batons at each end of the chain
+  c.fillStyle = "#5e3f24";
+  c.strokeStyle = "#3a2716";
+  c.lineWidth = Math.max(1, r * 0.04);
+  for (const [bx, by, rot] of [
+    [-r * 0.55, -r * 0.6, -Math.PI / 4],
+    [r * 0.55, r * 0.6, -Math.PI / 4],
+  ] as const) {
+    c.save();
+    c.translate(bx, by);
+    c.rotate(rot);
+    c.beginPath();
+    if (c.roundRect) c.roundRect(-r * 0.1, -r * 0.42, r * 0.2, r * 0.84, r * 0.1);
+    else c.rect(-r * 0.1, -r * 0.42, r * 0.2, r * 0.84);
+    c.fill();
+    c.stroke();
+    c.restore();
   }
   c.restore();
 }
