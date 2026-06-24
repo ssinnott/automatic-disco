@@ -64,8 +64,7 @@ export function MainMenu({ onStart, onOpenLab }: { onStart: () => void; onOpenLa
             {KEYBOARD_HELP.slice(0, numPlayers).map((km, i) => (
               <span key={i} className="keyhelp-row">
                 P{i + 1}: lean {km.left.replace("Key", "").toLowerCase()}/
-                {km.right.replace("Key", "").toLowerCase()} · jump{" "}
-                {km.jump.replace("Key", "").toLowerCase()} · duck{" "}
+                {km.right.replace("Key", "").toLowerCase()} · duck{" "}
                 {km.duck.replace("Key", "").toLowerCase()}
               </span>
             ))}

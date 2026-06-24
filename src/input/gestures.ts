@@ -1,11 +1,11 @@
 /**
  * Gesture math in MediaPipe's normalized [0,1] space.
  *
- * Jump and duck are **baseline-relative**: the PlayerManager learns each
- * player's resting hip height while they stand still, then fires when the hips
- * rise/drop by a fraction of torso height. This is far more forgiving than the
- * old velocity/leg-compression model (which needed ankles in frame and big
- * movements) and is the signal the Gesture Lab records and tunes.
+ * Duck is **baseline-relative**: the PlayerManager learns each player's resting
+ * hip height while they stand still, then fires when the hips drop by a fraction
+ * of torso height. This is far more forgiving than the old velocity/leg-
+ * compression model (which needed ankles in frame and big movements) and is the
+ * signal the Gesture Lab records and tunes.
  *
  * These functions are pure; the stateful baseline + smoothing live in
  * PlayerManager. Thresholds live in the mutable `gestureConfig` singleton so the
@@ -14,8 +14,6 @@
 import { LM, mid, pt, type Pose } from "../pose/landmarks";
 
 export interface GestureConfig {
-  /** Hips risen above rest by this fraction of torso height → jump. */
-  jumpRise: number;
   /** Hips dropped below rest by this fraction of torso height → duck. */
   duckDrop: number;
   /** |shoulder offset| / shoulder width past this → lean. */
@@ -23,7 +21,6 @@ export interface GestureConfig {
 }
 
 export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
-  jumpRise: 0.15,
   duckDrop: 0.15,
   leanRatio: 0.18,
 };

@@ -4,18 +4,18 @@
  * people can share one keyboard without colliding (extends the original Python
  * DEFAULT_KEYMAPS with duck).
  *
- *   P1  a/d lean   w jump   s duck
- *   P2  j/l lean   i jump   k duck
- *   P3  f/h lean   t jump   g duck
+ *   P1  a/d lean   s duck
+ *   P2  j/l lean   k duck
+ *   P3  f/h lean   g duck
  */
 import { type Action, type InputSource, type PlayerActions, emptyActions } from "./types";
 
 type KeyMap = Record<string, [number, Action]>; // key code -> [player, action]
 
 const PLAYER_KEYS: Record<Action, string>[] = [
-  { left: "KeyA", right: "KeyD", jump: "KeyW", duck: "KeyS" },
-  { left: "KeyJ", right: "KeyL", jump: "KeyI", duck: "KeyK" },
-  { left: "KeyF", right: "KeyH", jump: "KeyT", duck: "KeyG" },
+  { left: "KeyA", right: "KeyD", duck: "KeyS" },
+  { left: "KeyJ", right: "KeyL", duck: "KeyK" },
+  { left: "KeyF", right: "KeyH", duck: "KeyG" },
 ];
 
 export const KEYBOARD_HELP = PLAYER_KEYS;

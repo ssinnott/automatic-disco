@@ -20,10 +20,10 @@ function play(p: Phase, numPlayers: number, act: (i: number) => Set<Action>, fra
 }
 
 describe("runner phase", () => {
-  it("rewards jumping for treats and ducking past hazards", () => {
+  it("rewards ducking for treats and hazards alike", () => {
     const p = makePhase(11);
-    // Striking both poses every frame resolves every item that comes through.
-    const scores = play(p, 1, () => new Set<Action>(["jump", "duck"]));
+    // Ducking every frame resolves every item that comes through.
+    const scores = play(p, 1, () => new Set<Action>(["duck"]));
     expect(scores[0]).toBeGreaterThan(0);
   });
 
@@ -36,7 +36,7 @@ describe("runner phase", () => {
   it("scores each player independently", () => {
     const p = makePhase(5, 2);
     // Only P1 acts; P2 stands still.
-    const scores = play(p, 2, () => new Set<Action>(["jump", "duck"]));
+    const scores = play(p, 2, () => new Set<Action>(["duck"]));
     expect(scores[0]).toBeGreaterThan(0);
     expect(scores[1]).toBe(0);
   });

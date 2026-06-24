@@ -1,15 +1,14 @@
 import { type MiniGame } from "../types";
 import { piratesTheme } from "../themes/pirates";
 import { ninjasTheme } from "../themes/ninjas";
-import { makeDodgePhase } from "../phases/dodgePhase";
 import { makeGrabPhase } from "../phases/grabPhase";
 import { makeGestureMatchPhase } from "../phases/gestureMatchPhase";
 import { makeRunnerPhase } from "../phases/runnerPhase";
 
 // Every game shares the same phase archetypes; the theme + flavor differ. A run
-// draws 4 phases from this pool (semi-procedurally) so no two playthroughs are
+// draws phases from this pool (semi-procedurally) so no two playthroughs are
 // identical.
-const SHARED_POOL = [makeDodgePhase, makeGrabPhase, makeGestureMatchPhase, makeRunnerPhase];
+const SHARED_POOL = [makeGrabPhase, makeGestureMatchPhase, makeRunnerPhase];
 
 export const piratesGame: MiniGame = {
   id: "pirates",

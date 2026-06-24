@@ -7,7 +7,7 @@
  * of swapping. A slot is released only after its player has been gone for a
  * moment, freeing it for someone new.
  *
- * Jump/duck are detected as hip displacement from a learned resting baseline
+ * Duck is detected as hip displacement from a learned resting baseline
  * (in torso heights); lean is instantaneous. Baseline learning is
  * gated on torso visibility, so a head or legs leaving the frame can't drag the
  * baseline around. Thresholds come from the live `gestureConfig` so the Gesture
@@ -20,8 +20,6 @@ import { type Action, type PlayerActions } from "./types";
 
 /** Raw per-player signals, surfaced for the debug / tuning UI. */
 export interface PlayerSignals {
-  /** Hips risen above rest, in torso heights (drives jump). */
-  jumpAmt: number;
   /** Hips dropped below rest, in torso heights (drives duck). */
   duckAmt: number;
   /** Signed lean offset (drives left/right). */
@@ -41,6 +39,7 @@ export interface PlayerPosition {
 
 const BASELINE_ALPHA = 0.05; // how fast the resting baseline tracks (near rest)
 const REST_BAND = 0.15; // only re-learn baseline when within this of rest (torso)
+const LEAN_REST_BAND = 0.12; // only re-learn neutral lean when within this of it
 const HOLD_S = 0.4; // a fired gesture lingers this long, for forgiving timing
 const VIS_MIN = 0.4; // ignore bodies whose torso is less visible than this
 const VIS_LEARN = 0.6; // only learn/seed the baseline from torsos this visible
@@ -51,9 +50,10 @@ class PlayerState {
   hipYFilter = new OneEuroFilter();
   leanFilter = new OneEuroFilter();
   restHipY: number | null = null;
+  restLean = 0; // learned neutral lean offset (posture/camera bias)
   restTorso = 0.2;
   actions = new Set<Action>();
-  signals: PlayerSignals = { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
+  signals: PlayerSignals = { duckAmt: 0, lean: 0, ready: false };
   /** Per-action "stay active until" time (s) — makes gestures linger. */
   holdUntil: Partial<Record<Action, number>> = {};
   /** Tracking state: last known hip position + when we last saw this player. */
@@ -66,9 +66,10 @@ class PlayerState {
     this.hipYFilter.reset();
     this.leanFilter.reset();
     this.restHipY = null;
+    this.restLean = 0;
     this.restTorso = 0.2;
     this.actions = new Set<Action>();
-    this.signals = { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
+    this.signals = { duckAmt: 0, lean: 0, ready: false };
     this.holdUntil = {};
     this.lastX = null;
     this.lastY = null;
@@ -159,7 +160,7 @@ export class PlayerManager {
       const c = assigned[i];
       if (!c) {
         ps.present = false;
-        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0 };
+        ps.signals = { ...ps.signals, duckAmt: 0, lean: 0 };
         if (ps.lastSeen !== null && t - ps.lastSeen > RELEASE_S) ps.release();
         continue;
       }
@@ -184,44 +185,50 @@ export class PlayerManager {
       if (!trusted) {
         // Wait for one clean frame before seeding rest, so we don't anchor the
         // baseline to a head-/legs-out-of-frame guess.
-        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
+        ps.signals = { ...ps.signals, duckAmt: 0, lean: 0, ready: false };
         return;
       }
       ps.restHipY = rawHip;
       ps.restTorso = torso;
+      ps.restLean = leanOffset(pose);
     }
     const torsoRef = Math.max(ps.restTorso, 1e-3);
 
     // Re-learn the resting baseline only while near rest AND clearly visible, so
-    // neither a held jump/duck nor an out-of-frame frame drags it around.
+    // neither a held duck nor an out-of-frame frame drags it around.
     if (trusted && Math.abs(rawHip - ps.restHipY) < REST_BAND * torsoRef) {
       ps.restHipY += (rawHip - ps.restHipY) * BASELINE_ALPHA;
       ps.restTorso += (torso - ps.restTorso) * BASELINE_ALPHA;
     }
 
     const smHip = ps.hipYFilter.filter(rawHip, t);
-    const dy = smHip - ps.restHipY; // + = lower (duck), - = higher (jump)
-    const jumpAmt = -dy / torsoRef;
+    const dy = smHip - ps.restHipY; // + = lower (duck)
     const duckAmt = dy / torsoRef;
-    const offset = ps.leanFilter.filter(leanOffset(pose), t);
 
-    // Raw (instantaneous) gesture flags. jump/duck are mutually exclusive.
-    const rawJump = jumpAmt > cfg.jumpRise;
+    // Lean is measured relative to the player's learned neutral posture, so a
+    // crooked stance or camera angle doesn't bias one direction. Re-learn the
+    // neutral only while roughly upright, so a held lean isn't absorbed into it.
+    const rawLean = leanOffset(pose);
+    if (trusted && Math.abs(rawLean - ps.restLean) < LEAN_REST_BAND) {
+      ps.restLean += (rawLean - ps.restLean) * BASELINE_ALPHA;
+    }
+    const offset = ps.leanFilter.filter(rawLean - ps.restLean, t);
+
+    // Raw (instantaneous) gesture flags.
     const raw: Array<[Action, boolean]> = [
-      ["jump", rawJump],
-      ["duck", !rawJump && duckAmt > cfg.duckDrop],
+      ["duck", duckAmt > cfg.duckDrop],
       ["right", offset > cfg.leanRatio],
       ["left", -offset > cfg.leanRatio],
     ];
 
-    // Persist each gesture for HOLD_S after it stops, so brief motions (a jump!)
+    // Persist each gesture for HOLD_S after it stops, so brief motions (a duck!)
     // stay "on" long enough to land inside a game's hit window.
     for (const [action, on] of raw) {
       if (on) ps.holdUntil[action] = t + HOLD_S;
       if (on || t < (ps.holdUntil[action] ?? 0)) ps.actions.add(action);
     }
 
-    ps.signals = { jumpAmt, duckAmt, lean: offset, ready: true };
+    ps.signals = { duckAmt, lean: offset, ready: true };
   }
 
   snapshot(): PlayerActions {

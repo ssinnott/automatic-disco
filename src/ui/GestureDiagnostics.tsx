@@ -38,7 +38,7 @@ function Meter({
 
 /**
  * In-game gesture diagnostics. Same live signals the Gesture Lab tunes, but
- * overlaid during play so you can see whether a jump / lean is actually crossing
+ * overlaid during play so you can see whether a duck / lean is actually crossing
  * its threshold and firing. Toggle with the button or the `d` key.
  */
 export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numPlayers: number }) {
@@ -90,7 +90,7 @@ export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numP
           : `bodies: ${dbg.poseCount} · frames: ${dbg.detections}`}
       </div>
       {Array.from({ length: numPlayers }, (_, i) => {
-        const s = sig[i] ?? { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
+        const s = sig[i] ?? { duckAmt: 0, lean: 0, ready: false };
         const a = acts[i] ?? new Set<Action>();
         return (
           <div key={i} className="diag-player">
@@ -98,7 +98,6 @@ export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numP
               P{i + 1}
               {!s.ready && <span className="diag-cal"> · calibrating…</span>}
             </div>
-            <Meter label="JUMP" value={s.jumpAmt} threshold={gestureConfig.jumpRise} on={a.has("jump")} scale={0.5} />
             <Meter label="DUCK" value={s.duckAmt} threshold={gestureConfig.duckDrop} on={a.has("duck")} scale={0.5} />
             <Meter
               label={s.lean > 0.04 ? "LEAN ▶" : s.lean < -0.04 ? "◀ LEAN" : "LEAN"}

@@ -60,8 +60,8 @@ export function vis(pose: Pose, idx: number): number {
 }
 
 /**
- * Mean visibility of the four torso anchors (shoulders + hips) that jump, duck
- * and lean rely on. When the head or legs leave the frame these stay high, so
+ * Mean visibility of the four torso anchors (shoulders + hips) that duck and
+ * lean rely on. When the head or legs leave the frame these stay high, so
  * we can keep detecting from the torso while ignoring the out-of-frame noise.
  */
 export function torsoVisibility(pose: Pose): number {

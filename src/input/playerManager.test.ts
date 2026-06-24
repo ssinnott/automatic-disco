@@ -40,16 +40,18 @@ describe("PlayerManager", () => {
 
   it("detects lean direction per player", () => {
     const mgr = new PlayerManager(1);
+    settle(mgr, makePose()); // upright neutral baseline first
     const leanRight = makePose({ shoulderX: [0.5, 0.6], hipX: [0.46, 0.54] });
-    settle(mgr, leanRight);
-    expect(mgr.update([leanRight], 1)[0].has("right")).toBe(true);
+    const actions = feed(mgr, leanRight, 5);
+    expect(actions[0].has("right")).toBe(true);
   });
 
-  it("detects hips raised from rest as a jump", () => {
+  it("treats a sustained lean as the new neutral (no permanent bias)", () => {
     const mgr = new PlayerManager(1);
-    settle(mgr, makePose({ hipY: 0.55 })); // learn standing baseline
-    const actions = feed(mgr, makePose({ hipY: 0.4 }), 5); // hips up for a few frames
-    expect(actions[0].has("jump")).toBe(true);
+    // A player whose resting posture is offset shouldn't read as leaning.
+    const crooked = makePose({ shoulderX: [0.52, 0.62], hipX: [0.46, 0.54] });
+    settle(mgr, crooked, 60); // hold the crooked stance until it's learned as rest
+    expect(mgr.update([crooked], (CLOCK += 1 / 30))[0].size).toBe(0);
   });
 
   it("detects hips dropped from rest as a duck", () => {
@@ -61,10 +63,12 @@ describe("PlayerManager", () => {
 
   it("keeps players separate, seeded left-to-right", () => {
     const mgr = new PlayerManager(2);
-    const p1 = makePose({ shoulderX: [0.27, 0.37], hipX: [0.21, 0.29] }); // left, lean right
+    const p1Up = makePose({ shoulderX: [0.2, 0.3], hipX: [0.21, 0.29] }); // left, upright
     const p2 = makePose({ hipX: [0.71, 0.79], shoulderX: [0.7, 0.8] }); // right, upright
-    settle(mgr, p1); // p1 seeds into the left slot
-    const actions = mgr.update([p1, p2], 1);
+    settle(mgr, p1Up); // p1 seeds into the left slot with a neutral baseline
+    const p1Lean = makePose({ shoulderX: [0.27, 0.37], hipX: [0.21, 0.29] }); // left, lean right
+    let actions = mgr.snapshot();
+    for (let i = 0; i < 5; i++) actions = mgr.update([p1Lean, p2], (CLOCK += 1 / 30));
     expect(actions[0].has("right")).toBe(true);
     expect(actions[1].size).toBe(0);
   });
@@ -101,14 +105,14 @@ describe("PlayerManager", () => {
     const mgr = new PlayerManager(1);
     settle(mgr, makePose({ hipY: 0.55 })); // clean standing baseline
     // A frame where the torso landmarks are low-visibility AND the hips read
-    // higher (as if the head left frame and the estimate jumped) must not drag
-    // the rest baseline up — otherwise a later real jump would be missed.
+    // lower (as if the legs left frame and the estimate dropped) must not drag
+    // the rest baseline down — otherwise a later real duck would be missed.
     // Visibility 0.5 is tracked (>= VIS_MIN) but not trusted (< VIS_LEARN), so
     // the body still plays but can't move the resting baseline.
-    const noisy = dim(makePose({ hipY: 0.45 }), 0.5);
+    const noisy = dim(makePose({ hipY: 0.65 }), 0.5);
     for (let i = 0; i < 5; i++) mgr.update([noisy], (CLOCK += 1 / 30));
-    // Now a genuine jump from the original rest still fires.
-    const actions = feed(mgr, makePose({ hipY: 0.42 }), 5);
-    expect(actions[0].has("jump")).toBe(true);
+    // Now a genuine duck from the original rest still fires.
+    const actions = feed(mgr, makePose({ hipY: 0.72 }), 5);
+    expect(actions[0].has("duck")).toBe(true);
   });
 });

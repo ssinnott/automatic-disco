@@ -18,7 +18,6 @@ export function teamXs(centerX: number, sizePx: number, numPlayers: number): num
 
 /** Pick the dominant visual pose from a set of active actions. */
 export function primaryPose(actions: Set<Action>): string {
-  if (actions.has("jump")) return "jump";
   if (actions.has("duck")) return "duck";
   if (actions.has("left")) return "left";
   if (actions.has("right")) return "right";
@@ -27,7 +26,6 @@ export function primaryPose(actions: Set<Action>): string {
 
 /** Icons/words for prompting each gesture. */
 export const ACTION_LABEL: Record<Action, string> = {
-  jump: "JUMP",
   duck: "DUCK",
   left: "LEAN ◀",
   right: "LEAN ▶",

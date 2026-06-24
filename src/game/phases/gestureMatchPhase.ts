@@ -11,8 +11,8 @@ import { ACTION_LABEL, primaryPose, px, py, teamXs } from "./util";
 
 const HIT_SCORE = 10;
 const BURST_S = 1.5; // duration of the success burst
-// Dance uses whole-body poses only — no grab.
-const DANCE_ACTIONS: Action[] = ["jump", "duck", "left", "right"];
+// Dance uses whole-body poses only.
+const DANCE_ACTIONS: Action[] = ["duck", "left", "right"];
 const RAINBOW = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#5ac8fa", "#007aff", "#af52de"];
 
 export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
@@ -56,7 +56,7 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
       const progress = beatElapsed / beatMs;
 
       // shared prompt, with a directional arrow placed on the side that matches
-      // the move (up = jump, down = duck, left/right = lean).
+      // the move (down = duck, left/right = lean).
       c.fillStyle = theme.palette.text;
       c.font = "bold 44px system-ui, sans-serif";
       c.textAlign = "center";
@@ -69,8 +69,7 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
       const halfText = c.measureText(label).width / 2;
       const arrow = 18;
       const gap = 22;
-      if (t === "jump") drawArrow(c, promptX, promptY - 44, "up", arrow, theme.palette.text);
-      else if (t === "duck") drawArrow(c, promptX, promptY + 44, "down", arrow, theme.palette.text);
+      if (t === "duck") drawArrow(c, promptX, promptY + 44, "down", arrow, theme.palette.text);
       else if (t === "left") drawArrow(c, promptX - halfText - gap, promptY, "left", arrow, theme.palette.text);
       else if (t === "right") drawArrow(c, promptX + halfText + gap, promptY, "right", arrow, theme.palette.text);
 

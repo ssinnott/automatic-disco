@@ -4,7 +4,7 @@
  *   MiniGame  = a Theme + a pool of phase factories.
  *   A run     = 4 phases the GameRunner picks/seeds from that pool, ~22.5s each
  *               (~1.5 min total), scored per player.
- *   Phase     = one self-contained challenge (dodge / grab / gesture-match…).
+ *   Phase     = one self-contained challenge (catch / runner / dance…).
  *   Theme     = palette + background + simple geometric character drawing, so
  *               the same phase looks like pirates or ninjas.
  */
@@ -22,7 +22,7 @@ export interface Palette {
 }
 
 export interface CharacterState {
-  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "hit" */
+  /** "idle" | "run" | "duck" | "left" | "right" | "hit" */
   pose: string;
   color: string;
   /** Cyclic 0..1 stride phase, used to animate the legs/arms of the "run" pose. */
@@ -83,7 +83,7 @@ export interface PhaseContext {
 
 export interface Phase {
   readonly name: string;
-  /** Short imperative shown to players, e.g. "Jump the barrels!". */
+  /** Short imperative shown to players, e.g. "Duck the cannonballs!". */
   readonly instruction: string;
   /** Advance simulation. `actions` is per player; mutate `scores` in place. */
   update(dtMs: number, actions: PlayerActions, scores: number[]): void;

@@ -1,11 +1,10 @@
 /**
  * Side-scrolling infinite runner, co-op. The team runs in place on the left
- * while the world scrolls past from the right. Three kinds of things come at
- * them:
+ * while the world scrolls past from the right. Two kinds of things come at them,
+ * both at head height so a single DUCK resolves either:
  *
- *   - a ground hazard  → JUMP to clear it (+5)
  *   - an overhead hazard → DUCK under it (+5)
- *   - a floating treat   → JUMP to snag it (+10)
+ *   - a floating treat   → DUCK to snag it (+10)
  *
  * The treats are the theme's positive pickups — for the turtles that's a pizza
  * slice plus each turtle's signature weapon (katana, bō, sai, nunchaku). Hitting
@@ -27,7 +26,7 @@ const FLASH_S = 0.6;
 const SPIN_RATE = 2.4; // radians / second, for tumbling treats
 const RUN_CADENCE = 2.2; // stride cycles / second
 
-type Kind = "jump" | "duck" | "treat";
+type Kind = "duck" | "treat";
 type Status = "live" | "got" | "miss";
 
 interface Item {
@@ -60,8 +59,7 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
   let scroll = 0; // ground-tick offset, for the running-past illusion
 
   const spawn = () => {
-    const roll = rng.next();
-    const kind: Kind = roll < treatBias ? "treat" : roll < treatBias + (1 - treatBias) / 2 ? "jump" : "duck";
+    const kind: Kind = rng.next() < treatBias ? "treat" : "duck";
     items.push({
       x: 1.12,
       kind,
@@ -72,12 +70,9 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
     spawnTimer = rng.range(spawnMin, spawnMax);
   };
 
-  /** The gesture that resolves an item kind successfully. */
-  const need = (kind: Kind): Action => (kind === "duck" ? "duck" : "jump");
-
   return {
     name: "runner",
-    instruction: `Run! JUMP for ${theme.targetWord} & gear, DUCK the ${theme.obstacleWord}`,
+    instruction: `Run & DUCK — grab ${theme.targetWord} & gear, dodge the ${theme.obstacleWord}`,
     update(dtMs, actions, scores) {
       lastActions = actions;
       const dt = dtMs / 1000;
@@ -88,11 +83,10 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
 
       for (const it of items) {
         it.x -= speed * dt;
-        const want = need(it.kind);
         for (let p = 0; p < numPlayers; p++) {
           if (it.status[p] !== "live") continue;
           if (Math.abs(it.x - AVATAR_X) <= HIT_WINDOW) {
-            if (actions[p]?.has(want)) {
+            if (actions[p]?.has("duck")) {
               it.status[p] = "got";
               if (it.kind === "treat") {
                 scores[p] += TREAT_SCORE;
@@ -143,12 +137,12 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
           const ty = groundY - field.h * 0.3;
           it.treat!.draw(c, ix, ty, r * 1.05, it.spin + clock * SPIN_RATE);
         } else {
-          const oy = it.kind === "duck" ? groundY - field.h * 0.3 : groundY - r * 1.05;
+          const oy = groundY - field.h * 0.3;
           theme.drawObstacle(c, ix, oy, r, it.spin + clock * SPIN_RATE);
           c.fillStyle = theme.palette.text;
           c.font = "bold 13px system-ui, sans-serif";
           c.textAlign = "center";
-          c.fillText(ACTION_LABEL[need(it.kind)], ix, oy - r - 6);
+          c.fillText(ACTION_LABEL.duck, ix, oy - r - 6);
         }
       }
 
@@ -157,7 +151,7 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
       const xs = teamXs(px(field, AVATAR_X), size, numPlayers);
       for (let p = 0; p < numPlayers; p++) {
         const act = lastActions[p] ?? new Set<Action>();
-        const pose = act.has("jump") ? "jump" : act.has("duck") ? "duck" : "run";
+        const pose = act.has("duck") ? "duck" : "run";
         theme.drawCharacter(c, xs[p], groundY, size, {
           pose,
           color: theme.palette.players[p % theme.palette.players.length],
