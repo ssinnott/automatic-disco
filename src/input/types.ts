@@ -10,9 +10,9 @@
  * This mirrors the original Python `PoseEngine` / `KeyboardInput` split.
  */
 
-export type Action = "jump" | "duck" | "left" | "right" | "grab";
+export type Action = "jump" | "duck" | "left" | "right";
 
-export const ALL_ACTIONS: readonly Action[] = ["jump", "duck", "left", "right", "grab"];
+export const ALL_ACTIONS: readonly Action[] = ["jump", "duck", "left", "right"];
 
 /** One action set per player, indexed by player number (0 = P1). */
 export type PlayerActions = Set<Action>[];

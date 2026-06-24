@@ -10,10 +10,8 @@ function Meter({
   value,
   threshold,
   on,
-  /** Top of the bar's range. */
+  /** Full-scale value for the bar (so the threshold sits sensibly inside it). */
   scale,
-  /** Bottom of the bar's range (default 0; grab rests near -1). */
-  floor = 0,
   /** Signed bars (lean) center at zero. */
   signed = false,
 }: {
@@ -22,12 +20,10 @@ function Meter({
   threshold: number;
   on: boolean;
   scale: number;
-  floor?: number;
   signed?: boolean;
 }) {
-  const span = scale - floor || 1;
-  const frac = (v: number) => Math.max(0, Math.min(1, ((signed ? Math.abs(v) : v) - floor) / span));
-  const tFrac = Math.max(0, Math.min(1, (threshold - floor) / span));
+  const frac = (v: number) => Math.max(0, Math.min(1, (signed ? Math.abs(v) : v) / scale));
+  const tFrac = Math.max(0, Math.min(1, threshold / scale));
   return (
     <div className="diag-row">
       <span className={`diag-label${on ? " on" : ""}`}>{label}</span>
@@ -94,7 +90,7 @@ export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numP
           : `bodies: ${dbg.poseCount} · frames: ${dbg.detections}`}
       </div>
       {Array.from({ length: numPlayers }, (_, i) => {
-        const s = sig[i] ?? { jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0, ready: false };
+        const s = sig[i] ?? { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
         const a = acts[i] ?? new Set<Action>();
         return (
           <div key={i} className="diag-player">
@@ -111,14 +107,6 @@ export function GestureDiagnostics({ pose, numPlayers }: { pose: PoseInput; numP
               on={a.has("left") || a.has("right")}
               scale={0.6}
               signed
-            />
-            <Meter
-              label="GRAB"
-              value={s.grab}
-              threshold={gestureConfig.grabRaise}
-              on={a.has("grab")}
-              floor={-1}
-              scale={0.5}
             />
           </div>
         );

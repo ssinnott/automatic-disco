@@ -1,7 +1,8 @@
 /**
  * Catch phase, co-op. Targets fall in three shared lanes; each player slides
- * between lanes by leaning, then GRABs to catch the target in their lane. A
- * colored pointer over each avatar shows which lane that player has chosen.
+ * between lanes by leaning, and catches a target just by standing in its lane
+ * as it crosses the catch line. A colored pointer over each avatar shows which
+ * lane that player has chosen.
  *
  * Semi-procedural: fall speed, spawn cadence, lane choice.
  */
@@ -57,7 +58,7 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
 
   return {
     name: "grab",
-    instruction: `Lean to a lane, then GRAB the ${ctx.theme.targetWord}!`,
+    instruction: `Lean into a lane to catch the ${ctx.theme.targetWord}!`,
     update(dtMs, actions, scores) {
       lastActions = actions;
       const dt = dtMs / 1000;
@@ -74,10 +75,10 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
         tg.y += speed * dt;
         const inBand = tg.y >= CATCH_TOP && tg.y <= CATCH_BOTTOM;
         if (!inBand) continue;
-        // Anyone standing in this lane and grabbing collects it this frame.
+        // Anyone standing in this lane collects it this frame.
         let collected = false;
         for (let p = 0; p < numPlayers; p++) {
-          if (avatarLane(actions[p] ?? new Set()) === tg.lane && actions[p]?.has("grab")) {
+          if (avatarLane(actions[p] ?? new Set()) === tg.lane) {
             scores[p] += CATCH_SCORE;
             flash[p] = clock + FLASH_S;
             collected = true;

@@ -20,7 +20,6 @@ export function teamXs(centerX: number, sizePx: number, numPlayers: number): num
 export function primaryPose(actions: Set<Action>): string {
   if (actions.has("jump")) return "jump";
   if (actions.has("duck")) return "duck";
-  if (actions.has("grab")) return "grab";
   if (actions.has("left")) return "left";
   if (actions.has("right")) return "right";
   return "idle";
@@ -32,5 +31,4 @@ export const ACTION_LABEL: Record<Action, string> = {
   duck: "DUCK",
   left: "LEAN ◀",
   right: "LEAN ▶",
-  grab: "GRAB ✋",
 };

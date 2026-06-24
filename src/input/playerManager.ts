@@ -8,14 +8,14 @@
  * moment, freeing it for someone new.
  *
  * Jump/duck are detected as hip displacement from a learned resting baseline
- * (in torso heights); lean and grab are instantaneous. Baseline learning is
+ * (in torso heights); lean is instantaneous. Baseline learning is
  * gated on torso visibility, so a head or legs leaving the frame can't drag the
  * baseline around. Thresholds come from the live `gestureConfig` so the Gesture
  * Lab can tune them on the fly.
  */
 import { OneEuroFilter } from "../pose/oneEuro";
 import { centroidX, centroidY, torsoHeight, torsoVisibility, type Pose } from "../pose/landmarks";
-import { gestureConfig, hipY, leanOffset, wristRaise } from "./gestures";
+import { gestureConfig, hipY, leanOffset } from "./gestures";
 import { type Action, type PlayerActions } from "./types";
 
 /** Raw per-player signals, surfaced for the debug / tuning UI. */
@@ -26,8 +26,6 @@ export interface PlayerSignals {
   duckAmt: number;
   /** Signed lean offset (drives left/right). */
   lean: number;
-  /** Higher wrist above shoulders, in torso heights (drives grab). */
-  grab: number;
   /** Whether a baseline has been learned yet. */
   ready: boolean;
 }
@@ -55,7 +53,7 @@ class PlayerState {
   restHipY: number | null = null;
   restTorso = 0.2;
   actions = new Set<Action>();
-  signals: PlayerSignals = { jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0, ready: false };
+  signals: PlayerSignals = { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
   /** Per-action "stay active until" time (s) — makes gestures linger. */
   holdUntil: Partial<Record<Action, number>> = {};
   /** Tracking state: last known hip position + when we last saw this player. */
@@ -70,7 +68,7 @@ class PlayerState {
     this.restHipY = null;
     this.restTorso = 0.2;
     this.actions = new Set<Action>();
-    this.signals = { jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0, ready: false };
+    this.signals = { jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
     this.holdUntil = {};
     this.lastX = null;
     this.lastY = null;
@@ -161,7 +159,7 @@ export class PlayerManager {
       const c = assigned[i];
       if (!c) {
         ps.present = false;
-        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0 };
+        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0 };
         if (ps.lastSeen !== null && t - ps.lastSeen > RELEASE_S) ps.release();
         continue;
       }
@@ -186,7 +184,7 @@ export class PlayerManager {
       if (!trusted) {
         // Wait for one clean frame before seeding rest, so we don't anchor the
         // baseline to a head-/legs-out-of-frame guess.
-        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0, ready: false };
+        ps.signals = { ...ps.signals, jumpAmt: 0, duckAmt: 0, lean: 0, ready: false };
         return;
       }
       ps.restHipY = rawHip;
@@ -206,7 +204,6 @@ export class PlayerManager {
     const jumpAmt = -dy / torsoRef;
     const duckAmt = dy / torsoRef;
     const offset = ps.leanFilter.filter(leanOffset(pose), t);
-    const grab = wristRaise(pose);
 
     // Raw (instantaneous) gesture flags. jump/duck are mutually exclusive.
     const rawJump = jumpAmt > cfg.jumpRise;
@@ -215,7 +212,6 @@ export class PlayerManager {
       ["duck", !rawJump && duckAmt > cfg.duckDrop],
       ["right", offset > cfg.leanRatio],
       ["left", -offset > cfg.leanRatio],
-      ["grab", grab > cfg.grabRaise],
     ];
 
     // Persist each gesture for HOLD_S after it stops, so brief motions (a jump!)
@@ -225,7 +221,7 @@ export class PlayerManager {
       if (on || t < (ps.holdUntil[action] ?? 0)) ps.actions.add(action);
     }
 
-    ps.signals = { jumpAmt, duckAmt, lean: offset, grab, ready: true };
+    ps.signals = { jumpAmt, duckAmt, lean: offset, ready: true };
   }
 
   snapshot(): PlayerActions {

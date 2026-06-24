@@ -59,13 +59,6 @@ describe("PlayerManager", () => {
     expect(actions[0].has("duck")).toBe(true);
   });
 
-  it("detects a raised hand as grab", () => {
-    const mgr = new PlayerManager(1);
-    const grab = makePose({ wristY: [0.12, 0.55] });
-    settle(mgr, makePose());
-    expect(mgr.update([grab], 1)[0].has("grab")).toBe(true);
-  });
-
   it("keeps players separate, seeded left-to-right", () => {
     const mgr = new PlayerManager(2);
     const p1 = makePose({ shoulderX: [0.27, 0.37], hipX: [0.21, 0.29] }); // left, lean right

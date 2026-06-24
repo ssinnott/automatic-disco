@@ -11,7 +11,7 @@
  * PlayerManager. Thresholds live in the mutable `gestureConfig` singleton so the
  * Lab can tune them live and gameplay picks the tuned values up immediately.
  */
-import { LM, mid, pt, torsoHeight, type Pose } from "../pose/landmarks";
+import { LM, mid, pt, type Pose } from "../pose/landmarks";
 
 export interface GestureConfig {
   /** Hips risen above rest by this fraction of torso height → jump. */
@@ -20,20 +20,12 @@ export interface GestureConfig {
   duckDrop: number;
   /** |shoulder offset| / shoulder width past this → lean. */
   leanRatio: number;
-  /**
-   * Grab fires when the higher wrist rises past this (in torso heights relative
-   * to the shoulder line). Arms-down rests near -1.0, so a value around -0.45
-   * means "hands up to about chest height" — a natural reach, not an overhead
-   * raise.
-   */
-  grabRaise: number;
 }
 
 export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
   jumpRise: 0.15,
   duckDrop: 0.15,
   leanRatio: 0.18,
-  grabRaise: -0.45,
 };
 
 /** Live, mutable config shared by gameplay and the Gesture Lab. */
@@ -54,15 +46,4 @@ export function leanOffset(pose: Pose): number {
 /** Vertical position of the hip midpoint. */
 export function hipY(pose: Pose): number {
   return mid(pose, LM.L_HIP, LM.R_HIP).y;
-}
-
-/**
- * How far the higher wrist is above the shoulder line, in torso heights.
- * Positive = a hand is raised (a reach/grab); negative = hands are down.
- */
-export function wristRaise(pose: Pose): number {
-  const shoulderY = mid(pose, LM.L_SHOULDER, LM.R_SHOULDER).y;
-  const topWristY = Math.min(pt(pose, LM.L_WRIST).y, pt(pose, LM.R_WRIST).y);
-  const torso = Math.max(torsoHeight(pose), 1e-3);
-  return (shoulderY - topWristY) / torso;
 }

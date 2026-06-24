@@ -41,7 +41,7 @@ export interface HumanoidOpts {
   size: number;
   bodyColor: string;
   skinColor: string;
-  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
+  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "hit" */
   pose: string;
   /** Cyclic 0..1 stride phase for the "run" pose's leg/arm swing. */
   phase?: number;
@@ -103,8 +103,8 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   ctx.strokeStyle = bodyColor;
   ctx.lineWidth = h * 0.085;
   const shoulderY = bodyTop + h * 0.06;
-  const armDx = pose === "grab" ? bodyW * 0.95 : bodyW * 0.88;
-  const armDy = pose === "grab" ? -h * 0.24 : h * 0.2;
+  const armDx = bodyW * 0.88;
+  const armDy = h * 0.2;
   // Pump the arms in opposition to the legs while running.
   const aL = stride * 1.4; // left arm leads when the right leg is forward
   const aR = -stride * 1.4;

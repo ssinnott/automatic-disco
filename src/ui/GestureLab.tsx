@@ -17,14 +17,13 @@ const ROWS: Row[] = [
   { key: "jumpRise", label: "Jump", hint: "hips rise above rest", min: 0.05, max: 0.8, value: (s) => s.jumpAmt },
   { key: "duckDrop", label: "Duck", hint: "hips drop below rest", min: 0.05, max: 0.8, value: (s) => s.duckAmt },
   { key: "leanRatio", label: "Lean", hint: "torso tilt", min: 0.1, max: 0.7, value: (s) => Math.abs(s.lean) },
-  { key: "grabRaise", label: "Grab", hint: "hand above shoulders", min: -0.1, max: 0.8, value: (s) => s.grab },
 ];
 
 const SCALE = 0.9; // bar full-scale in signal units
 
 export function GestureLab({ pose, onExit }: { pose: PoseInput; onExit: () => void }) {
   const [, force] = useState(0);
-  const [sig, setSig] = useState<PlayerSignals>({ jumpAmt: 0, duckAmt: 0, lean: 0, grab: 0, ready: false });
+  const [sig, setSig] = useState<PlayerSignals>({ jumpAmt: 0, duckAmt: 0, lean: 0, ready: false });
   const [recording, setRecording] = useState(false);
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const recRef = useRef<{ until: number; max: Record<string, number> } | null>(null);

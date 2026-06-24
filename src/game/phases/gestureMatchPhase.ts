@@ -55,12 +55,24 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
       const t = target();
       const progress = beatElapsed / beatMs;
 
-      // shared prompt
+      // shared prompt, with a directional arrow placed on the side that matches
+      // the move (up = jump, down = duck, left/right = lean).
       c.fillStyle = theme.palette.text;
       c.font = "bold 44px system-ui, sans-serif";
       c.textAlign = "center";
       c.textBaseline = "middle";
-      c.fillText(ACTION_LABEL[t], px(field, 0.5), py(field, 0.22));
+      const promptX = px(field, 0.5);
+      const promptY = py(field, 0.22);
+      const label = ACTION_LABEL[t];
+      c.fillText(label, promptX, promptY);
+
+      const halfText = c.measureText(label).width / 2;
+      const arrow = 18;
+      const gap = 22;
+      if (t === "jump") drawArrow(c, promptX, promptY - 44, "up", arrow, theme.palette.text);
+      else if (t === "duck") drawArrow(c, promptX, promptY + 44, "down", arrow, theme.palette.text);
+      else if (t === "left") drawArrow(c, promptX - halfText - gap, promptY, "left", arrow, theme.palette.text);
+      else if (t === "right") drawArrow(c, promptX + halfText + gap, promptY, "right", arrow, theme.palette.text);
 
       // beat timer bar
       const barW = field.w * 0.4;
@@ -88,6 +100,30 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
       }
     },
   };
+}
+
+/** A filled triangular arrow of half-size `s` centered at (x, y), pointing `dir`. */
+function drawArrow(
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  dir: "up" | "down" | "left" | "right",
+  s: number,
+  color: string,
+) {
+  // Unit triangle pointing right; rotate to face `dir`.
+  const angle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[dir];
+  c.save();
+  c.translate(x, y);
+  c.rotate(angle);
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(s, 0);
+  c.lineTo(-s * 0.7, -s * 0.85);
+  c.lineTo(-s * 0.7, s * 0.85);
+  c.closePath();
+  c.fill();
+  c.restore();
 }
 
 /**

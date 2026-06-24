@@ -22,7 +22,7 @@ export interface Palette {
 }
 
 export interface CharacterState {
-  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "grab" | "hit" */
+  /** "idle" | "run" | "jump" | "duck" | "left" | "right" | "hit" */
   pose: string;
   color: string;
   /** Cyclic 0..1 stride phase, used to animate the legs/arms of the "run" pose. */

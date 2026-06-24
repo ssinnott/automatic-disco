@@ -66,8 +66,7 @@ export function MainMenu({ onStart, onOpenLab }: { onStart: () => void; onOpenLa
                 P{i + 1}: lean {km.left.replace("Key", "").toLowerCase()}/
                 {km.right.replace("Key", "").toLowerCase()} · jump{" "}
                 {km.jump.replace("Key", "").toLowerCase()} · duck{" "}
-                {km.duck.replace("Key", "").toLowerCase()} · grab{" "}
-                {km.grab.replace("Key", "").toLowerCase()}
+                {km.duck.replace("Key", "").toLowerCase()}
               </span>
             ))}
           </div>
