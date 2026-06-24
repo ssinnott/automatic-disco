@@ -8,7 +8,7 @@
  *   Theme     = palette + background + simple geometric character drawing, so
  *               the same phase looks like pirates or ninjas.
  */
-import { type PlayerActions } from "../input/types";
+import { type PlayerActions, type PlayerPose } from "../input/types";
 import { type Rng } from "./rng";
 
 export interface Palette {
@@ -27,6 +27,10 @@ export interface CharacterState {
   color: string;
   /** Cyclic 0..1 stride phase, used to animate the legs/arms of the "run" pose. */
   phase?: number;
+  /** Continuous signed lean -1..1; overrides the discrete left/right tilt. */
+  lean?: number;
+  /** Continuous crouch 0..1; overrides the discrete duck (drives the squat). */
+  crouch?: number;
 }
 
 /** Draw a positive pickup (spun by `angle`) — same shape as `drawTarget`. */
@@ -85,8 +89,11 @@ export interface Phase {
   readonly name: string;
   /** Short imperative shown to players, e.g. "Duck the cannonballs!". */
   readonly instruction: string;
-  /** Advance simulation. `actions` is per player; mutate `scores` in place. */
-  update(dtMs: number, actions: PlayerActions, scores: number[]): void;
+  /**
+   * Advance simulation. `actions` is per player; mutate `scores` in place.
+   * `poses` (optional) carries continuous lean/crouch for analog avatar motion.
+   */
+  update(dtMs: number, actions: PlayerActions, scores: number[], poses?: PlayerPose[]): void;
   /**
    * Draw the shared play field. All players' avatars share one stage (drawn
    * clustered, slightly overlapping) and react to the same hazards.

@@ -62,6 +62,8 @@ export const ninjasTheme: Theme = {
       skinColor: TURTLE_SKIN,
       pose: state.pose,
       phase: state.phase,
+      lean: state.lean,
+      crouch: state.crouch,
       bodyDecor: (c, bx, by, bw, bh) => {
         // shell rim (a touch wider than the torso, peeking at the sides)
         const cyShell = by + bh * 0.52;

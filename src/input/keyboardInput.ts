@@ -8,7 +8,7 @@
  *   P2  j/l lean   k duck
  *   P3  f/h lean   g duck
  */
-import { type Action, type InputSource, type PlayerActions, emptyActions } from "./types";
+import { type Action, type InputSource, type PlayerActions, type PlayerPose, emptyActions } from "./types";
 
 type KeyMap = Record<string, [number, Action]>; // key code -> [player, action]
 
@@ -58,6 +58,14 @@ export class KeyboardInput implements InputSource {
       if (entry) out[entry[0]].add(entry[1]);
     }
     return out;
+  }
+
+  /** Binary lean/crouch from held keys (no analog signal from a keyboard). */
+  poses(): PlayerPose[] {
+    return this.snapshot().map((a) => ({
+      lean: a.has("right") ? 1 : a.has("left") ? -1 : 0,
+      crouch: a.has("duck") ? 1 : 0,
+    }));
   }
 
   stop(): void {

@@ -5,7 +5,7 @@
  * per frame. The host just calls update() then render() each animation frame
  * and watches `status`.
  */
-import { type PlayerActions } from "../input/types";
+import { type PlayerActions, type PlayerPose } from "../input/types";
 import { Rng } from "./rng";
 import { type MiniGame, type Phase, type Zone } from "./types";
 
@@ -76,7 +76,7 @@ export class GameRunner {
     return this.status === "done";
   }
 
-  update(dtMs: number, actions: PlayerActions) {
+  update(dtMs: number, actions: PlayerActions, poses?: PlayerPose[]) {
     this.stateElapsed += dtMs;
 
     // Lock the pose baseline near the end of the countdown, when the player is
@@ -90,7 +90,7 @@ export class GameRunner {
     }
 
     if (this.status === "playing") {
-      this.phases[this.phaseIndex].update(dtMs, actions, this.scores);
+      this.phases[this.phaseIndex].update(dtMs, actions, this.scores, poses);
       if (this.stateElapsed >= this.stateDuration) this.advance();
       return;
     }

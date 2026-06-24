@@ -43,7 +43,8 @@ const LEAN_REST_BAND = 0.12; // only re-learn neutral lean when within this of i
 const HOLD_S = 0.4; // a fired gesture lingers this long, for forgiving timing
 const VIS_MIN = 0.4; // ignore bodies whose torso is less visible than this
 const VIS_LEARN = 0.6; // only learn/seed the baseline from torsos this visible
-const MATCH_DIST = 0.3; // max per-frame hip travel (norm. x) to stay the same player
+const MATCH_DIST = 0.3; // max per-frame centroid travel (norm.) to stay the same player
+const COAST_S = 0.35; // hold a player's last stance this long when briefly lost (overlap)
 const RELEASE_S = 1.5; // free a slot after its player is gone this long
 
 class PlayerState {
@@ -130,7 +131,12 @@ export class PlayerManager {
     for (let i = 0; i < this.numPlayers; i++) {
       const last = this.players[i].lastX;
       if (last === null) continue;
-      cands.forEach((c, ci) => pairs.push({ slot: i, ci, d: Math.abs(c.x - last) }));
+      const lastY = this.players[i].lastY ?? 0;
+      // 2D distance (x primary, y at reduced weight) so two bodies that line up
+      // horizontally but differ in height/depth don't get confused for one.
+      cands.forEach((c, ci) =>
+        pairs.push({ slot: i, ci, d: Math.hypot(c.x - last, (c.y - lastY) * 0.6) }),
+      );
     }
     pairs.sort((a, b) => a.d - b.d);
     for (const { slot, ci, d } of pairs) {
@@ -156,14 +162,21 @@ export class PlayerManager {
     // 3. Drive each slot from its assignment (or coast / release if missing).
     for (let i = 0; i < this.numPlayers; i++) {
       const ps = this.players[i];
-      ps.actions = new Set<Action>();
       const c = assigned[i];
       if (!c) {
         ps.present = false;
-        ps.signals = { ...ps.signals, duckAmt: 0, lean: 0 };
-        if (ps.lastSeen !== null && t - ps.lastSeen > RELEASE_S) ps.release();
+        const goneFor = ps.lastSeen !== null ? t - ps.lastSeen : Infinity;
+        // Briefly hold the last stance (don't clear actions/signals) so a player
+        // momentarily lost behind another doesn't snap to idle and back. After
+        // the grace window, settle to neutral; release the slot once truly gone.
+        if (goneFor > COAST_S) {
+          ps.actions = new Set<Action>();
+          ps.signals = { ...ps.signals, duckAmt: 0, lean: 0 };
+        }
+        if (goneFor > RELEASE_S) ps.release();
         continue;
       }
+      ps.actions = new Set<Action>();
       ps.present = true;
       ps.lastX = c.x;
       ps.lastY = c.y;

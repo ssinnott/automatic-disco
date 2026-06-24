@@ -13,7 +13,7 @@
  * Semi-procedural: scroll speed, spawn cadence and the hazard/treat mix are all
  * rolled from the seeded rng.
  */
-import { type Action, type PlayerActions } from "../../input/types";
+import { type Action, type PlayerActions, type PlayerPose } from "../../input/types";
 import { type Collectible, type Phase, type PhaseContext, type Theme } from "../types";
 import { ACTION_LABEL, px, py, teamXs } from "./util";
 
@@ -54,6 +54,7 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
   const items: Item[] = [];
   const flash = Array.from({ length: numPlayers }, () => ({ text: "", color: "", until: 0 }));
   let lastActions: PlayerActions = Array.from({ length: numPlayers }, () => new Set<Action>());
+  let lastPoses: PlayerPose[] | undefined;
   let spawnTimer = 0.6;
   let clock = 0;
   let scroll = 0; // ground-tick offset, for the running-past illusion
@@ -73,8 +74,9 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
   return {
     name: "runner",
     instruction: `Run & DUCK — grab ${theme.targetWord} & gear, dodge the ${theme.obstacleWord}`,
-    update(dtMs, actions, scores) {
+    update(dtMs, actions, scores, poses) {
       lastActions = actions;
+      lastPoses = poses;
       const dt = dtMs / 1000;
       clock += dt;
       scroll += speed * dt;
@@ -151,12 +153,15 @@ export function makeRunnerPhase(ctx: PhaseContext): Phase {
       const xs = teamXs(px(field, AVATAR_X), size, numPlayers);
       for (let p = 0; p < numPlayers; p++) {
         const act = lastActions[p] ?? new Set<Action>();
-        const pose = act.has("duck") ? "duck" : "run";
+        // Always "run" so the legs keep pumping; a continuous crouch (from the
+        // body) squats them down smoothly when they duck a hazard or treat.
+        const crouch = lastPoses?.[p]?.crouch ?? (act.has("duck") ? 1 : 0);
         theme.drawCharacter(c, xs[p], groundY, size, {
-          pose,
+          pose: "run",
           color: theme.palette.players[p % theme.palette.players.length],
           // each avatar pumps on its own slightly-offset stride cycle
           phase: (clock * RUN_CADENCE + p * 0.3) % 1,
+          crouch,
         });
         const f = flash[p];
         if (clock < f.until && f.text) {

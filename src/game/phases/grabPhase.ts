@@ -6,7 +6,7 @@
  *
  * Semi-procedural: fall speed, spawn cadence, lane choice.
  */
-import { type Action, type PlayerActions } from "../../input/types";
+import { type Action, type PlayerActions, type PlayerPose } from "../../input/types";
 import { type Phase, type PhaseContext, type Theme } from "../types";
 import { primaryPose, px, py, teamXs } from "./util";
 
@@ -42,6 +42,7 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
   const targets: Target[] = [];
   const flash = Array.from({ length: numPlayers }, () => 0);
   let lastActions: PlayerActions = Array.from({ length: numPlayers }, () => new Set<Action>());
+  let lastPoses: PlayerPose[] | undefined;
   let spawnTimer = 0.6;
   let clock = 0;
 
@@ -59,8 +60,9 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
   return {
     name: "grab",
     instruction: `Lean into a lane to catch the ${ctx.theme.targetWord}!`,
-    update(dtMs, actions, scores) {
+    update(dtMs, actions, scores, poses) {
       lastActions = actions;
+      lastPoses = poses;
       const dt = dtMs / 1000;
       clock += dt;
       spawnTimer -= dt;
@@ -142,6 +144,8 @@ export function makeGrabPhase(ctx: PhaseContext): Phase {
           theme.drawCharacter(c, xs[i], groundY, size, {
             pose: primaryPose(lastActions[p] ?? new Set()),
             color,
+            lean: lastPoses?.[p]?.lean,
+            crouch: lastPoses?.[p]?.crouch,
           });
           drawPointer(c, xs[i], groundY - size - 14, color, p + 1, clock < flash[p]);
         });

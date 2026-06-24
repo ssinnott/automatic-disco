@@ -91,6 +91,23 @@ describe("PlayerManager", () => {
     expect(pos[1].x).toBeCloseTo(0.8, 1); // P2 stayed with B
   });
 
+  it("keeps both slots through a brief overlap that merges into one body", () => {
+    const mgr = new PlayerManager(2);
+    for (let i = 0; i < 6; i++) mgr.update([bodyAt(0.35), bodyAt(0.65)], (CLOCK += 1 / 30));
+    // They cross: the detector reports a single merged body for a few frames.
+    for (let i = 0; i < 3; i++) mgr.update([bodyAt(0.5)], (CLOCK += 1 / 30));
+    // The momentarily-lost player keeps its slot (coasts, not released).
+    const mid = mgr.positions();
+    expect(mid[0].present || mid[1].present).toBe(true);
+    // Once they separate, both are re-acquired with their identities intact.
+    for (let i = 0; i < 5; i++) mgr.update([bodyAt(0.35), bodyAt(0.65)], (CLOCK += 1 / 30));
+    const pos = mgr.positions();
+    expect(pos[0].present).toBe(true);
+    expect(pos[1].present).toBe(true);
+    expect(pos[0].x).toBeCloseTo(0.35, 1);
+    expect(pos[1].x).toBeCloseTo(0.65, 1);
+  });
+
   it("ignores a barely-visible phantom body", () => {
     const mgr = new PlayerManager(1);
     settle(mgr, makePose()); // a real body seeds P1

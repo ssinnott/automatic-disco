@@ -56,7 +56,7 @@ export function GameCanvas({
       raf = requestAnimationFrame(frame);
       const dt = Math.min(50, now - last);
       last = now;
-      runner.update(dt, input.snapshot());
+      runner.update(dt, input.snapshot(), input.poses());
       runner.render(ctx, canvas.width, canvas.height);
       if (runner.isDone && !reportedDone) {
         reportedDone = true;

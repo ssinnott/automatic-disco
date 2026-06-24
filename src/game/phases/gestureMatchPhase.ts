@@ -5,7 +5,7 @@
  *
  * Semi-procedural: the gesture sequence and tempo are rolled from the rng.
  */
-import { type Action, type PlayerActions } from "../../input/types";
+import { type Action, type PlayerActions, type PlayerPose } from "../../input/types";
 import { type Phase, type PhaseContext, type Theme } from "../types";
 import { ACTION_LABEL, primaryPose, px, py, teamXs } from "./util";
 
@@ -27,14 +27,16 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
   let hit: boolean[] = Array.from({ length: numPlayers }, () => false);
   const burstAt = Array.from({ length: numPlayers }, () => -1); // clock time of last success
   let lastActions: PlayerActions = Array.from({ length: numPlayers }, () => new Set<Action>());
+  let lastPoses: PlayerPose[] | undefined;
 
   const target = () => sequence[beatIndex % sequence.length];
 
   return {
     name: "dance",
     instruction: "Follow the dance — strike each pose!",
-    update(dtMs, actions, scores) {
+    update(dtMs, actions, scores, poses) {
       lastActions = actions;
+      lastPoses = poses;
       clock += dtMs / 1000;
       beatElapsed += dtMs;
       const t = target();
@@ -95,6 +97,8 @@ export function makeGestureMatchPhase(ctx: PhaseContext): Phase {
         theme.drawCharacter(c, xs[p], groundY, size, {
           pose: primaryPose(lastActions[p] ?? new Set()),
           color,
+          lean: lastPoses?.[p]?.lean,
+          crouch: lastPoses?.[p]?.crouch,
         });
       }
     },

@@ -14,7 +14,11 @@
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { mirrorPose, type Pose } from "../pose/landmarks";
 import { PlayerManager, type PlayerPosition, type PlayerSignals } from "./playerManager";
-import { type InputSource, type PlayerActions, emptyActions } from "./types";
+import { type InputSource, type PlayerActions, type PlayerPose, emptyActions } from "./types";
+
+const FULL_LEAN = 0.5; // lean signal (shoulder offset) that maps to a full avatar tilt
+const FULL_CROUCH = 0.4; // duck signal (torso heights) that maps to a full crouch
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm";
 const MODEL_URL =
@@ -39,7 +43,7 @@ export class PoseInput implements InputSource {
   private detections = 0;
   private error: string | null = null;
   private actions: PlayerActions;
-  private poses: Pose[] = [];
+  private rawPoses: Pose[] = [];
 
   constructor(numPlayers: number) {
     this.numPlayers = numPlayers;
@@ -76,6 +80,13 @@ export class PoseInput implements InputSource {
       baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
       runningMode: "VIDEO",
       numPoses: this.numPlayers,
+      // Lower than the 0.5 defaults so a partly-occluded body (e.g. two players
+      // overlapping) keeps being tracked instead of dropping out. The manager
+      // still rejects junk via its own torso-visibility gate, so loosening
+      // these doesn't let phantom bodies claim a slot.
+      minPoseDetectionConfidence: 0.4,
+      minPosePresenceConfidence: 0.3,
+      minTrackingConfidence: 0.3,
     });
 
     this.running = true;
@@ -105,7 +116,7 @@ export class PoseInput implements InputSource {
     try {
       const result = lm.detectForVideo(this.video, this.ts);
       const poses: Pose[] = (result.landmarks ?? []).map((p) => mirrorPose(p as unknown as Pose));
-      this.poses = poses;
+      this.rawPoses = poses;
       this.actions = this.mgr.update(poses, this.ts / 1000);
       this.detections++;
       this.error = null;
@@ -120,16 +131,24 @@ export class PoseInput implements InputSource {
 
   /** Latest mirrored poses (coords align with the mirrored preview). */
   latestPoses(): Pose[] {
-    return this.poses;
+    return this.rawPoses;
   }
 
   debug(): PoseDebug {
-    return { poseCount: this.poses.length, detections: this.detections, error: this.error };
+    return { poseCount: this.rawPoses.length, detections: this.detections, error: this.error };
   }
 
   /** Raw per-player gesture signals, for the debug / tuning UI. */
   signals(): PlayerSignals[] {
     return this.mgr.signals();
+  }
+
+  /** Continuous lean/crouch per player (smoothed), normalized for the avatars. */
+  poses(): PlayerPose[] {
+    return this.mgr.signals().map((s) => ({
+      lean: clamp(s.lean / FULL_LEAN, -1, 1),
+      crouch: clamp(s.duckAmt / FULL_CROUCH, 0, 1),
+    }));
   }
 
   /** Where each tracked player is, for drawing labels that follow them. */

@@ -90,6 +90,8 @@ export const piratesTheme: Theme = {
       skinColor: "#f1c9a5",
       pose: state.pose,
       phase: state.phase,
+      lean: state.lean,
+      crouch: state.crouch,
       accessory: (c, hx, hy, hr) => {
         // tricorne hat: dark triangle band above the head
         c.fillStyle = "#2b2b2b";

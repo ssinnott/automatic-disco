@@ -45,27 +45,41 @@ export interface HumanoidOpts {
   pose: string;
   /** Cyclic 0..1 stride phase for the "run" pose's leg/arm swing. */
   phase?: number;
+  /** Continuous signed lean -1..1; overrides the discrete left/right tilt. */
+  lean?: number;
+  /** Continuous crouch 0..1; overrides the discrete duck. */
+  crouch?: number;
   accessory?: Accessory;
   /** Optional torso decoration, drawn over the body in its transform. */
   bodyDecor?: BodyDecor;
 }
 
+const MAX_TILT = 0.26; // radians of lean at full tilt
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
 export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   const { pose } = o;
   const running = pose === "run";
+  // Continuous lean/crouch when supplied (analog body tracking), otherwise fall
+  // back to the discrete pose so keyboard / static draws still read correctly.
+  const tilt = clamp(o.lean ?? (pose === "left" ? -1 : pose === "right" ? 1 : 0), -1, 1);
+  const crouch = clamp(o.crouch ?? (pose === "duck" ? 1 : 0), 0, 1);
+
   // A running figure bobs up and down over the stride cycle (twice per cycle).
   const runBob = running ? Math.abs(Math.sin((o.phase ?? 0) * Math.PI * 2)) * o.size * 0.06 : 0;
-  const lift = runBob;
-  const h = pose === "duck" ? o.size * 0.62 : o.size;
-  const footY = o.footY - lift;
-  const top = footY - h;
+  const h = o.size; // limbs/torso keep full proportion; the crouch is geometric
+  const footY = o.footY - runBob;
+  // Crouching lowers the hips & whole upper body while the feet stay planted;
+  // the knees bend out to take up the slack (a real squat, not a smaller figure).
+  const crouchDrop = crouch * h * 0.26;
+  const top = footY - h + crouchDrop;
   // Forward/back stride offset for legs (and opposite for arms).
   const stride = running ? Math.sin((o.phase ?? 0) * Math.PI * 2) * h * 0.16 : 0;
 
   ctx.save();
-  if (pose === "left" || pose === "right") {
+  if (Math.abs(tilt) > 0.001) {
     ctx.translate(o.cx, footY);
-    ctx.rotate((pose === "left" ? -1 : 1) * 0.2);
+    ctx.rotate(tilt * MAX_TILT);
     ctx.translate(-o.cx, -footY);
   }
 
@@ -76,18 +90,23 @@ export function drawHumanoid(ctx: CanvasRenderingContext2D, o: HumanoidOpts) {
   const bodyW = h * 0.26;
   const bodyColor = pose === "hit" ? "#e24b4b" : o.bodyColor;
 
-  // legs
+  // legs — hip → knee → foot, so the knee can bend out as the body crouches.
   ctx.strokeStyle = bodyColor;
   ctx.lineWidth = h * 0.07;
   ctx.lineCap = "round";
-  const hipY = footY - h * 0.32;
+  ctx.lineJoin = "round";
+  const hipY = footY - h * 0.32 + crouchDrop;
+  const kneeY = (hipY + footY) / 2;
+  const kneeOut = bodyW * (0.12 + crouch * 0.8); // knees splay outward in a squat
   // Swing the feet fore/aft for a running stride; lift whichever foot is forward.
   const lFoot = -stride; // left and right legs move in opposition
   const rFoot = stride;
   ctx.beginPath();
   ctx.moveTo(o.cx - bodyW * 0.3, hipY);
+  ctx.lineTo(o.cx - bodyW * 0.3 - kneeOut, kneeY);
   ctx.lineTo(o.cx - bodyW * 0.5 + lFoot, footY - Math.max(0, lFoot) * 0.5);
   ctx.moveTo(o.cx + bodyW * 0.3, hipY);
+  ctx.lineTo(o.cx + bodyW * 0.3 + kneeOut, kneeY);
   ctx.lineTo(o.cx + bodyW * 0.5 + rFoot, footY - Math.max(0, rFoot) * 0.5);
   ctx.stroke();
 
